@@ -37,11 +37,13 @@ def exchange_token(
     try:
         service = PlaidService(get_settings())
         payload = service.exchange_public_token(request.public_token)
+        institution_name = service.get_institution_name(payload["access_token"])
         store_plaid_item(
             db,
             profile_id=request.profile_id,
             access_token=payload["access_token"],
             plaid_item_id=payload.get("item_id"),
+            institution_name=institution_name,
         )
         sync_payload = service.sync_transactions(payload["access_token"])
         replace_plaid_snapshot(db, profile_id=request.profile_id, plaid_payload=sync_payload)

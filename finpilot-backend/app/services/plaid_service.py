@@ -1,6 +1,8 @@
 from plaid import ApiClient, Configuration, Environment
 from plaid.api import plaid_api
 from plaid.model.country_code import CountryCode
+from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
+from plaid.model.item_get_request import ItemGetRequest
 from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
@@ -53,6 +55,21 @@ class PlaidService:
         self.require_configured()
         request = ItemPublicTokenExchangeRequest(public_token=public_token)
         return self.client.item_public_token_exchange(request).to_dict()
+
+    def get_institution_name(self, access_token: str) -> str | None:
+        """Fetch the real Plaid Sandbox institution name for display. Returns None on any failure."""
+        self.require_configured()
+        try:
+            item = self.client.item_get(ItemGetRequest(access_token=access_token)).to_dict()
+            institution_id = item.get("item", {}).get("institution_id")
+            if not institution_id:
+                return None
+            institution = self.client.institutions_get_by_id(
+                InstitutionsGetByIdRequest(institution_id=institution_id, country_codes=[CountryCode("US")])
+            ).to_dict()
+            return institution.get("institution", {}).get("name")
+        except Exception:
+            return None
 
     def sync_transactions(self, access_token: str) -> dict:
         self.require_configured()
