@@ -31,13 +31,6 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> refreshSnapshot() async {
-    snapshot = null;
-    notifyListeners();
-    snapshot = await _api.getSnapshot();
-    notifyListeners();
-  }
-
   Future<void> sendMessage(String text) async {
     messages.add(ChatMessage(role: MessageRole.user, text: text));
     isLoading = true;
