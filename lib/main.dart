@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/advisor_screen.dart';
 import 'screens/goals_screen.dart';
+import 'screens/user_picker_screen.dart';
 import 'services/chat_provider.dart';
 
 Future<void> main() async {
@@ -41,7 +42,7 @@ class FinPilotApp extends StatelessWidget {
             ),
           ),
         ),
-        home: const AppShell(),
+        home: const UserPickerScreen(),
       ),
     );
   }
@@ -57,16 +58,43 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _index = 0;
 
-  static const _screens = [
-    DashboardScreen(),
-    AdvisorScreen(),
-    GoalsScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final snap = context.watch<ChatProvider>().snapshot;
+    final tabs = snap?.tabs ?? ['dashboard', 'advisor', 'goals'];
+
+    final destinations = <_TabDef>[
+      if (tabs.contains('dashboard'))
+        const _TabDef(
+          screen: DashboardScreen(),
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon: Icon(Icons.dashboard),
+          label: 'Dashboard',
+        ),
+      if (tabs.contains('advisor'))
+        const _TabDef(
+          screen: AdvisorScreen(),
+          icon: Icon(Icons.auto_awesome_outlined),
+          selectedIcon: Icon(Icons.auto_awesome),
+          label: 'Advisor',
+        ),
+      if (tabs.contains('goals'))
+        const _TabDef(
+          screen: GoalsScreen(),
+          icon: Icon(Icons.flag_outlined),
+          selectedIcon: Icon(Icons.flag),
+          label: 'Goals',
+        ),
+    ];
+
+    // Clamp index when tab count shrinks (e.g. no goals tab)
+    final clampedIndex = _index.clamp(0, destinations.length - 1);
+
     return Scaffold(
-      body: IndexedStack(index: _index, children: _screens),
+      body: IndexedStack(
+        index: clampedIndex,
+        children: destinations.map((d) => d.screen).toList(),
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: AppColors.card,
@@ -76,29 +104,39 @@ class _AppShellState extends State<AppShell> {
           backgroundColor: AppColors.card,
           elevation: 0,
           indicatorColor: AppColors.divider,
-          selectedIndex: _index,
+          selectedIndex: clampedIndex,
           onDestinationSelected: (i) => setState(() => _index = i),
-          destinations: [
-            NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined, color: AppColors.inkLight),
-              selectedIcon: const Icon(Icons.dashboard, color: AppColors.ink),
-              label: 'Dashboard',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.auto_awesome_outlined, color: AppColors.inkLight),
-              selectedIcon: const Icon(Icons.auto_awesome, color: AppColors.ink),
-              label: 'Advisor',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.flag_outlined, color: AppColors.inkLight),
-              selectedIcon: const Icon(Icons.flag, color: AppColors.ink),
-              label: 'Goals',
-            ),
-          ],
+          destinations: destinations
+              .map((d) => NavigationDestination(
+                    icon: IconTheme(
+                      data: const IconThemeData(color: AppColors.inkLight),
+                      child: d.icon,
+                    ),
+                    selectedIcon: IconTheme(
+                      data: const IconThemeData(color: AppColors.ink),
+                      child: d.selectedIcon,
+                    ),
+                    label: d.label,
+                  ))
+              .toList(),
         ),
       ),
     );
   }
+}
+
+class _TabDef {
+  final Widget screen;
+  final Widget icon;
+  final Widget selectedIcon;
+  final String label;
+
+  const _TabDef({
+    required this.screen,
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+  });
 }
 
 class AppColors {

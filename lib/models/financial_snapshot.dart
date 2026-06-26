@@ -7,6 +7,11 @@ class FinancialSnapshot {
   final List<Transaction> recentTransactions;
   final List<Goal> goals;
   final List<UpcomingBill> upcomingBills;
+  // GenUI fields
+  final List<String> layout;
+  final List<String> tabs;
+  final String profileName;
+  final String profileTagline;
 
   FinancialSnapshot({
     required this.checkingBalance,
@@ -17,6 +22,10 @@ class FinancialSnapshot {
     required this.recentTransactions,
     required this.goals,
     required this.upcomingBills,
+    this.layout = const ['balances', 'cashflow', 'spending_chart', 'goals', 'upcoming_bills', 'transactions'],
+    this.tabs = const ['dashboard', 'advisor', 'goals'],
+    this.profileName = '',
+    this.profileTagline = '',
   });
 
   factory FinancialSnapshot.fromJson(Map<String, dynamic> json) {
@@ -37,6 +46,14 @@ class FinancialSnapshot {
       upcomingBills: (json['upcoming_bills'] as List<dynamic>? ?? [])
           .map((b) => UpcomingBill.fromJson(b as Map<String, dynamic>))
           .toList(),
+      layout: (json['layout'] as List<dynamic>? ?? ['balances', 'cashflow', 'spending_chart', 'goals', 'upcoming_bills', 'transactions'])
+          .map((e) => e as String)
+          .toList(),
+      tabs: (json['tabs'] as List<dynamic>? ?? ['dashboard', 'advisor', 'goals'])
+          .map((e) => e as String)
+          .toList(),
+      profileName: json['profile_name'] as String? ?? '',
+      profileTagline: json['profile_tagline'] as String? ?? '',
     );
   }
 
@@ -46,6 +63,10 @@ class FinancialSnapshot {
       savingsBalance: 3420.00,
       monthlyIncome: 4200.00,
       monthlySpending: 3180.00,
+      layout: const ['balances', 'cashflow', 'spending_chart', 'goals', 'upcoming_bills', 'transactions'],
+      tabs: const ['dashboard', 'advisor', 'goals'],
+      profileName: 'Demo User',
+      profileTagline: 'Sample financial data',
       topCategories: [
         CategorySpend(name: 'Dining', amount: 620, delta: 18),
         CategorySpend(name: 'Rideshare', amount: 310, delta: 42),
