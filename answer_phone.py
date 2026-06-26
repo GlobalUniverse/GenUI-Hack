@@ -46,6 +46,13 @@ async def media_stream(websocket: WebSocket):
                 prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Charon")
             )
         ),
+        realtime_input_config=types.RealtimeInputConfig(
+            automatic_activity_detection=types.AutomaticActivityDetection(
+                disabled=False,
+                start_of_speech_sensitivity=types.StartSensitivity.START_SENSITIVITY_HIGH,
+                end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_LOW,
+            )
+        ),
     )
 
     async with client.aio.live.connect(model=GEMINI_MODEL, config=config) as session:
@@ -53,13 +60,14 @@ async def media_stream(websocket: WebSocket):
 
         async def receive_from_twilio():
             nonlocal stream_sid
+            media_count = 0
             try:
                 async for raw in websocket.iter_text():
                     data = json.loads(raw)
                     event = data.get("event")
                     if event == "start":
                         stream_sid = data["start"]["streamSid"]
-                        # Kick off the conversation
+                        print(f"[start] stream_sid={stream_sid}")
                         await session.send_client_content(
                             turns=types.Content(
                                 role="user",
@@ -69,28 +77,35 @@ async def media_stream(websocket: WebSocket):
                         )
                     elif event == "media":
                         ulaw = base64.b64decode(data["media"]["payload"])
-                        # µ-law 8 kHz → PCM 16-bit 8 kHz → 16 kHz
                         pcm_8k = audioop.ulaw2lin(ulaw, 2)
                         pcm_16k, _ = audioop.ratecv(pcm_8k, 2, 1, 8000, 16000, None)
                         await session.send_realtime_input(
                             audio=types.Blob(data=pcm_16k, mime_type="audio/pcm;rate=16000")
                         )
+                        media_count += 1
+                        if media_count % 50 == 0:
+                            print(f"[twilio->gemini] {media_count} audio chunks sent")
                     elif event == "stop":
+                        print("[stop] Twilio stream ended")
                         break
             except Exception as e:
-                print(f"[twilio→gemini] {e}")
+                print(f"[twilio->gemini] error: {e}")
 
         async def send_to_twilio():
+            audio_chunks = 0
             try:
                 async for response in session.receive():
-                    if not response.server_content:
+                    sc = response.server_content
+                    if not sc:
                         continue
-                    turn = response.server_content.model_turn
+                    if sc.turn_complete:
+                        print(f"[gemini->twilio] turn complete, sent {audio_chunks} audio chunks")
+                        audio_chunks = 0
+                    turn = sc.model_turn
                     if not turn:
                         continue
                     for part in turn.parts:
                         if part.inline_data and "audio" in part.inline_data.mime_type:
-                            # PCM 24 kHz → 8 kHz → µ-law
                             pcm_24k = part.inline_data.data
                             pcm_8k, _ = audioop.ratecv(pcm_24k, 2, 1, 24000, 8000, None)
                             ulaw = audioop.lin2ulaw(pcm_8k, 2)
@@ -101,8 +116,10 @@ async def media_stream(websocket: WebSocket):
                                     "streamSid": stream_sid,
                                     "media": {"payload": payload},
                                 })
+                                audio_chunks += 1
+                print("[gemini->twilio] receive() loop ended")
             except Exception as e:
-                print(f"[gemini→twilio] {e}")
+                print(f"[gemini->twilio] error: {e}")
 
         await asyncio.gather(receive_from_twilio(), send_to_twilio())
 
