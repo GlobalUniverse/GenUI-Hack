@@ -94,30 +94,31 @@ async def media_stream(websocket: WebSocket):
         async def send_to_twilio():
             audio_chunks = 0
             try:
-                async for response in session.receive():
-                    sc = response.server_content
-                    if not sc:
-                        continue
-                    if sc.turn_complete:
-                        print(f"[gemini->twilio] turn complete, sent {audio_chunks} audio chunks")
-                        audio_chunks = 0
-                    turn = sc.model_turn
-                    if not turn:
-                        continue
-                    for part in turn.parts:
-                        if part.inline_data and "audio" in part.inline_data.mime_type:
-                            pcm_24k = part.inline_data.data
-                            pcm_8k, _ = audioop.ratecv(pcm_24k, 2, 1, 24000, 8000, None)
-                            ulaw = audioop.lin2ulaw(pcm_8k, 2)
-                            payload = base64.b64encode(ulaw).decode()
-                            if stream_sid:
-                                await websocket.send_json({
-                                    "event": "media",
-                                    "streamSid": stream_sid,
-                                    "media": {"payload": payload},
-                                })
-                                audio_chunks += 1
-                print("[gemini->twilio] receive() loop ended")
+                while True:
+                    async for response in session.receive():
+                        sc = response.server_content
+                        if not sc:
+                            continue
+                        if sc.turn_complete:
+                            print(f"[gemini->twilio] turn complete, sent {audio_chunks} audio chunks")
+                            audio_chunks = 0
+                        turn = sc.model_turn
+                        if not turn:
+                            continue
+                        for part in turn.parts:
+                            if part.inline_data and "audio" in part.inline_data.mime_type:
+                                pcm_24k = part.inline_data.data
+                                pcm_8k, _ = audioop.ratecv(pcm_24k, 2, 1, 24000, 8000, None)
+                                ulaw = audioop.lin2ulaw(pcm_8k, 2)
+                                payload = base64.b64encode(ulaw).decode()
+                                if stream_sid:
+                                    await websocket.send_json({
+                                        "event": "media",
+                                        "streamSid": stream_sid,
+                                        "media": {"payload": payload},
+                                    })
+                                    audio_chunks += 1
+                    print("[gemini->twilio] receive() turn ended, restarting listener")
             except Exception as e:
                 print(f"[gemini->twilio] error: {e}")
 
