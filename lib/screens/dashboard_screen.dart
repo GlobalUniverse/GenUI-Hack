@@ -6,6 +6,7 @@ import '../widgets/dynamic/spending_chart_widget.dart';
 import '../widgets/dynamic/transaction_table_widget.dart';
 import '../widgets/dynamic/goal_progress_widget.dart';
 import '../widgets/dynamic/upcoming_bills_widget.dart';
+import '../widgets/skeleton.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -20,7 +21,7 @@ class DashboardScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF0F1923),
       body: SafeArea(
         child: snap == null
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF4FC3F7)))
+            ? const SingleChildScrollView(child: DashboardSkeleton())
             : CustomScrollView(
                 slivers: [
                   SliverToBoxAdapter(
