@@ -1,267 +1,255 @@
-# FinPilot — AI-Powered Personal Finance Platform
+# FinPilot - Agentic Mobile Financial Advisor
 
-An AI financial advisor that aggregates your banking data, generates dynamic visualizations on demand, and provides personalized recommendations with autopilot investing capabilities.
+FinPilot is a hackathon-built mobile financial advisor that helps people understand their money, set goals, and act on recommendations through an AI-first interface. The app combines a Flutter mobile experience, Gemini-powered reasoning, dynamic financial widgets, and Plaid Sandbox data to create a personal teller that feels proactive instead of passive.
 
----
+The hackathon goal is simple: in six hours, three engineers should be able to demo a mobile advisor that can answer financial questions, render the right UI on demand, and proactively surface one useful money move.
 
-## Overview
+## Demo Pitch
 
-FinPilot connects to your financial accounts (Plaid Sandbox + PayPal), feeds your real financial data to Claude AI, and lets you ask natural-language questions like _"show me my spending last 3 months"_ or _"how do I save $10k by December?"_ — the AI picks the right charts and tables to render alongside its answer.
+Most finance apps make users dig through charts. FinPilot lets users ask natural-language questions like:
 
-### Core Features
+- "Can I afford a $120 dinner tonight?"
+- "Where did my money go this month?"
+- "How do I save $1,000 in the next 60 days?"
+- "What should I do before rent hits tomorrow?"
 
-| Feature | Description |
-|---|---|
-| **Account Aggregation** | Link bank accounts via Plaid Sandbox; PayPal transaction history via OAuth |
-| **Dynamic AI Dashboard** | Claude picks and renders charts/tables based on your questions (no fixed layout) |
-| **AI Financial Advisor** | Goal-aware recommendations backed by your real financial snapshot |
-| **Autopilot Investing** | Phase 1: AI trade recommendations. Phase 2: execution via Alpaca paper trading |
+Gemini interprets the user's financial snapshot, chooses the right visual widgets, and returns concise recommendations. The Flutter app renders those widgets as charts, summary cards, transaction views, goal progress, and action cards.
 
----
+## 6-Hour MVP
+
+The demo should prioritize a tight, reliable experience over production completeness.
+
+Must-have:
+
+- Flutter mobile app shell with dashboard, advisor chat, and dynamic widget canvas
+- FastAPI backend with a compact financial snapshot endpoint
+- Plaid Sandbox integration, with seeded mock data as a fallback
+- Gemini advisor endpoint that returns text plus structured widget specs
+- Dynamic Flutter widget renderer for summaries, charts, transactions, goals, and recommendations
+- Goal recommendation flow, such as saving for rent, emergency fund, or upcoming travel
+- One proactive agent moment, such as warning about a low balance before a bill
+
+Nice-to-have:
+
+- Twilio SMS alert prototype
+- Voice-call brainstorm or stub
+- Real Plaid Link flow
+- Persistent conversation history
+- Alpaca paper trading concept screen
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Browser (Next.js)                      │
-│  NextAuth.js session ──► JWT bearer ──► FastAPI             │
-│  Chat UI + DynamicCanvas ──► SSE stream ──► WidgetRenderer  │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ REST + SSE
-┌─────────────────────────▼───────────────────────────────────┐
-│                     FastAPI (Python)                        │
-│  Auth ▸ Plaid ▸ PayPal ▸ AI Service ▸ Portfolio            │
-│  Background: APScheduler (nightly sync, Plaid webhooks)     │
-└──────┬───────────────────┬──────────────────┬───────────────┘
-       │                   │                  │
-  PostgreSQL         Anthropic API    Plaid / PayPal / Alpaca
-  (SQLAlchemy)     claude-sonnet-4-6   (sandboxes + paper)
-```
-
-**Stack:**
-- **Frontend** — Next.js 14 (App Router), TypeScript, Shadcn/ui, Recharts, TanStack Table
-- **Backend** — Python FastAPI, SQLAlchemy, Alembic, APScheduler
-- **AI** — Claude claude-sonnet-4-6 via Anthropic API (tool use + SSE streaming)
-- **Data** — Plaid Sandbox, PayPal REST API
-- **Investing** — Alpaca Paper Trading API (Phase 2)
-
----
-
-## Repository Structure
-
-```
-finpilot/
-├── finpilot-frontend/          # Next.js app
-│   ├── app/
-│   │   ├── (auth)/             # login, register
-│   │   └── (dashboard)/        # accounts, transactions, advisor, goals, portfolio
-│   ├── components/
-│   │   ├── widgets/            # 10 dynamic financial widgets
-│   │   ├── advisor/            # Chat UI + DynamicCanvas
-│   │   └── layout/             # Sidebar, TopNav
-│   ├── hooks/                  # useChat (SSE), useFinancialData, usePortfolio
-│   ├── store/                  # Zustand global state
-│   └── types/
-│
-└── finpilot-backend/           # FastAPI app
-    ├── app/
-    │   ├── models/             # SQLAlchemy ORM models
-    │   ├── schemas/            # Pydantic request/response models
-    │   ├── routers/            # auth, plaid, paypal, advisor, goals, portfolio, webhooks
-    │   ├── services/
-    │   │   ├── ai_service.py           # Claude streaming + tool use
-    │   │   ├── financial_snapshot.py   # compact context builder for Claude
-    │   │   ├── widget_resolver.py      # tool calls → real DB data → WidgetSpec
-    │   │   ├── plaid_service.py
-    │   │   ├── paypal_service.py
-    │   │   └── alpaca_service.py       # Phase 2
-    │   └── core/               # JWT auth, security, dependencies
-    └── alembic/                # DB migrations
+```text
+Flutter Mobile App
+  Auth-lite / demo profile
+  Advisor chat
+  Dynamic widget renderer
+  Goal and recommendation views
+        |
+        | REST / streaming response
+        v
+FastAPI Backend
+  Financial snapshot service
+  Gemini advisor service
+  Widget spec resolver
+  Plaid Sandbox or seeded data
+  Optional Twilio webhook
+        |
+        v
+Gemini API + Plaid Sandbox + Local DB
 ```
 
----
+For the hackathon, the backend can use SQLite or lightweight local Postgres. The important interface is the advisor response contract: natural-language text plus structured widget specs the Flutter app can render immediately.
 
-## How the AI UI Works
+## Dynamic Gemini UI
 
-The dynamic widget system is the core innovation. When you ask a question:
+FinPilot's core idea is generative UI for personal finance. Instead of a fixed dashboard, the advisor chooses the right interface for the user's question.
 
-1. **Snapshot** — Backend builds a compact (~2500 token) JSON summary of your accounts, balances, spending, and goals.
-2. **Claude with tool use** — The AI receives 10 widget tool definitions (`render_bar_chart`, `render_line_chart`, `render_pie_chart`, `render_summary_card`, `render_transaction_table`, `render_goal_progress`, `render_budget_tracker`, `render_net_worth_timeline`, `render_investment_portfolio`, `render_recommendation_card`). It decides which to call.
-3. **Widget resolver** — Each tool call maps to a DB query that returns a `WidgetSpec` with real data.
-4. **SSE stream** — Text chunks and widget specs stream to the frontend in real time.
-5. **WidgetRenderer** — Dispatches each `widget_type` to its React component.
+Example:
 
-```
-User: "How much did I spend on food last 3 months?"
-  → Claude calls render_bar_chart(data_query="spending_by_category", date_range_months=3)
-  → Backend queries DB, returns real bar chart data
-  → Frontend renders BarChartWidget alongside Claude's text response
-```
+```text
+User: "Where did I overspend this month?"
 
----
-
-## Data Models
-
-| Table | Purpose |
-|---|---|
-| `users` | Auth, preferences |
-| `linked_accounts` | Plaid/PayPal/Alpaca accounts with AES-256 encrypted tokens |
-| `transactions` | All transactions from all sources, categorized |
-| `goals` | Savings/debt/retirement goals with AI-generated action plans |
-| `recommendations` | AI advisory items the user can accept/reject |
-| `portfolio_holdings` | Investment positions (Phase 2) |
-| `trade_orders` | AI-recommended + executed trades (Phase 2) |
-| `ai_conversations` | Conversation history |
-| `ai_messages` | Messages with widget specs stored as JSONB |
-
-Sensitive third-party tokens (Plaid, PayPal, Alpaca) are encrypted with AES-256-GCM before storage. The encryption key lives in an environment variable, never in the database.
-
----
-
-## API Endpoints
-
-### Auth
-```
-POST /api/auth/register
-POST /api/auth/login        → JWT
-POST /api/auth/refresh
+Gemini response:
+  Text: "Dining and rideshare were the biggest changes..."
+  Widgets:
+    - spending_bar_chart
+    - category_delta_card
+    - transaction_table
+    - recommendation_card
 ```
 
-### Plaid
-```
-POST /api/plaid/create-link-token
-POST /api/plaid/exchange-token
-GET  /api/plaid/accounts
-POST /api/plaid/sync
-POST /api/webhooks/plaid
-```
+Initial widget types:
 
-### PayPal
-```
-GET /api/paypal/auth-url
-GET /api/paypal/callback
-POST /api/paypal/sync
-```
+- `summary_card` for balances, cashflow, upcoming bills, or savings rate
+- `spending_chart` for category and time-based spending
+- `transaction_table` for explainable drill-downs
+- `goal_progress` for savings or debt payoff targets
+- `recommendation_card` for suggested actions the user can accept, snooze, or reject
 
-### AI Advisor
-```
-POST /api/advisor/conversations
-GET  /api/advisor/conversations/{id}/messages
-POST /api/advisor/conversations/{id}/chat    → SSE stream
-GET  /api/advisor/recommendations
-POST /api/advisor/recommendations/{id}/accept
-```
+## Twilio: Why It Makes Sense
 
-### Portfolio (Phase 2)
-```
-GET  /api/portfolio/holdings
-GET  /api/portfolio/performance
-POST /api/portfolio/orders
-```
+Twilio should not duplicate the app. If the user already has a rich Flutter interface, SMS and voice only make sense for moments when opening the app is inconvenient or when the agent needs to reach the user first.
 
----
+Good Twilio use cases:
 
-## Phase Roadmap
+- Proactive alerts: "Rent posts tomorrow and your checking buffer is only $84."
+- Quick replies: user texts "move $50 to savings", "remind me Friday", or "show options."
+- Hands-busy voice: user calls while walking or commuting and asks, "Can I afford dinner tonight?"
+- Re-engagement: FinPilot nudges the user when a goal is drifting or a bill changes the plan.
 
-### Phase 1 — MVP (Weeks 1–10)
-- [ ] User auth (NextAuth + FastAPI JWT)
-- [ ] Plaid Sandbox: account linking, transaction sync, webhooks
-- [ ] PayPal OAuth: transaction history import
-- [ ] Static dashboard (prebuilt summary widgets)
-- [ ] AI Advisor chat with dynamic widget rendering
-- [ ] Goal management with AI action plans
-- [ ] Financial recommendations engine
-- [ ] Nightly sync via APScheduler
+Trust boundary:
 
-### Phase 2 — Autopilot (Weeks 11–16)
-- [ ] Alpaca paper trading account linking
-- [ ] Portfolio holdings display + P&L tracking
-- [ ] AI investment recommendations with reasoning
-- [ ] Trade review UI (approve/reject)
-- [ ] Paper trade execution
-- [ ] Trade order history + notifications
+- SMS should send short, low-risk summaries only.
+- Sensitive details, account views, and approvals should deep-link back into the app.
+- Transfers, investing, or risky actions should require explicit in-app confirmation.
 
----
+Hackathon demo version:
 
-## Team Task Breakdown
+1. Backend detects a low-buffer scenario from seeded data.
+2. It sends or simulates a Twilio SMS alert.
+3. User replies with a short intent like "what should I do?"
+4. The same Gemini advisor backend returns a concise recommendation.
+5. The response links back to the Flutter app for the full plan.
 
-Three full-stack developers, split by feature domain:
+## Team Delegation
 
-### Dev 1 — Backend Core
-FastAPI scaffolding, PostgreSQL/Alembic setup, auth (JWT), Plaid Sandbox integration, PayPal OAuth flow, transaction sync, financial data models, Plaid webhook handler, APScheduler sync jobs.
+Three engineers can work in parallel without stepping on each other.
 
-**Owns:** `finpilot-backend/app/routers/auth.py`, `plaid.py`, `paypal.py`, `accounts.py`, `transactions.py`, `webhooks.py` and all corresponding models, schemas, and services.
+### Engineer 1 - Backend and Data
 
-### Dev 2 — AI + Frontend
-Next.js scaffolding, all dashboard pages, widget component library (10 widgets), AI advisor chat UI with SSE streaming, Claude tool-use integration (`ai_service.py`, `financial_snapshot.py`, `widget_resolver.py`), goal management UI.
+Owns:
 
-**Owns:** `finpilot-frontend/` (all), `finpilot-backend/app/routers/advisor.py`, `goals.py`, and corresponding AI services.
+- FastAPI scaffolding
+- Plaid Sandbox or seeded transaction data
+- Financial snapshot builder
+- Gemini advisor endpoint
+- Widget spec response contract
 
-### Dev 3 — Portfolio + Investing
-Alpaca paper trading integration, portfolio holdings backend, investment recommendations engine, portfolio frontend pages, trade review UI, Docker Compose setup, CI/CD pipeline.
+Demo output:
 
-**Owns:** `finpilot-backend/app/routers/portfolio.py`, `app/services/alpaca_service.py`, `finpilot-frontend/app/(dashboard)/portfolio/`, `docker-compose.yml`, `.github/workflows/`.
+- API returns realistic financial snapshot data
+- Advisor endpoint answers questions with text and widget specs
 
----
+### Engineer 2 - Flutter App and Dynamic UI
 
-## Local Development Setup
+Owns:
 
-### Prerequisites
-```bash
-# Node.js 20+, Python 3.12+, PostgreSQL 15+
-brew install node python postgresql
-```
+- Flutter app shell
+- Advisor chat interface
+- Dynamic widget renderer
+- Dashboard and goal screens
+- Mobile polish for the final demo
+
+Demo output:
+
+- User can ask a question in the app
+- App renders Gemini-selected financial widgets cleanly
+
+### Engineer 3 - Recommendations, Twilio, and Demo Flow
+
+Owns:
+
+- Goal recommendation scenarios
+- Proactive alert logic
+- Twilio SMS prototype or simulation
+- Seed data quality
+- Final demo script and fallback paths
+
+Demo output:
+
+- One compelling proactive money moment
+- One clean end-to-end story judges can understand quickly
+
+## 6-Hour Build Timeline
+
+### 0:00-0:30 - Align and Scaffold
+
+- Confirm demo story and fallback data
+- Create Flutter and FastAPI skeletons
+- Define advisor response JSON shape
+- Add `.env.example` files
+
+### 0:30-2:00 - Parallel Foundations
+
+- Backend: financial snapshot and seeded/Plaid data
+- Flutter: mobile shell, chat UI, placeholder widgets
+- Recommendations: goals and proactive alert scenario
+
+### 2:00-4:00 - AI and Dynamic UI
+
+- Connect Gemini advisor endpoint
+- Return structured widget specs
+- Render widgets in Flutter
+- Add transaction/category/goal data to responses
+
+### 4:00-5:00 - Proactive Agent Moment
+
+- Implement or simulate low-buffer alert
+- Add Twilio webhook/SMS stub if time allows
+- Deep-link or route user from alert back to app context
+
+### 5:00-6:00 - Polish and Demo
+
+- Tighten mobile UI
+- Prepare seed data for predictable questions
+- Record backup screenshots or screen capture
+- Run final end-to-end demo script
+
+## Local Development
 
 ### Backend
+
 ```bash
 cd finpilot-backend
-python -m venv venv && source venv/bin/activate
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # fill in your keys
-alembic upgrade head
+cp .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Frontend
+### Flutter
+
 ```bash
-cd finpilot-frontend
-npm install
-cp .env.example .env.local  # fill in your keys
-npm run dev  # http://localhost:3000
+cd finpilot-mobile
+flutter pub get
+cp .env.example .env
+flutter run
 ```
 
-### Plaid Sandbox Credentials
-1. Create account at `dashboard.plaid.com`
-2. Create a Sandbox app → copy Client ID and Secret
-3. Test institution: First Platypus Bank (`ins_109508`)
-4. Test credentials: `user_good` / `pass_good`
-
-### PayPal Sandbox
-1. Create account at `developer.paypal.com`
-2. Create Sandbox app → copy Client ID and Secret
-
----
-
-## Environment Variables
+### Environment Variables
 
 ```bash
-# finpilot-backend/.env
-DATABASE_URL=postgresql://finpilot:password@localhost:5432/finpilot
-JWT_SECRET=<64-char random hex>
-TOKEN_ENCRYPTION_KEY=<32-byte base64 AES key>
+# Backend
+GEMINI_API_KEY=
 PLAID_CLIENT_ID=
 PLAID_SECRET=
 PLAID_ENV=sandbox
-PAYPAL_CLIENT_ID=
-PAYPAL_CLIENT_SECRET=
-PAYPAL_ENV=sandbox
-ANTHROPIC_API_KEY=
-ALPACA_API_KEY=           # Phase 2
-ALPACA_SECRET_KEY=        # Phase 2
-ALPACA_BASE_URL=https://paper-api.alpaca.markets
+DATABASE_URL=sqlite:///./finpilot.db
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
 
-# finpilot-frontend/.env.local
-NEXTAUTH_SECRET=<32-char random>
-NEXTAUTH_URL=http://localhost:3000
-NEXT_PUBLIC_API_URL=http://localhost:8000
+# Flutter
+API_BASE_URL=http://localhost:8000
 ```
+
+## Stretch Goals
+
+- Real Plaid Link flow instead of seeded fallback data
+- Twilio voice call using speech-to-text and text-to-speech
+- PayPal transaction import
+- Alpaca paper trading recommendations
+- Persistent user accounts and conversation history
+- Push notifications for proactive advice
+
+## Demo Success Criteria
+
+The hackathon demo is successful if a judge can see:
+
+1. A user asks a money question in a mobile app.
+2. FinPilot answers with personalized reasoning.
+3. The UI changes dynamically based on the question.
+4. The agent recommends a concrete next action.
+5. A proactive alert demonstrates why this is an agent, not just a dashboard.
