@@ -38,7 +38,7 @@ def _fetch_snapshot(profile_id: str) -> dict:
 
     cur.execute(
         """SELECT
-            COALESCE(SUM(amount) FILTER (WHERE direction='inflow'), 0) AS income,
+            COALESCE(SUM(amount) FILTER (WHERE direction='inflow'), 0)  AS income,
             COALESCE(SUM(amount) FILTER (WHERE direction='outflow'), 0) AS spending
            FROM transactions
            WHERE profile_id=%s AND date >= date_trunc('month', now())""",
@@ -57,11 +57,16 @@ def _fetch_snapshot(profile_id: str) -> dict:
     top_categories = [{"name": r["name"], "amount": float(r["amount"])} for r in cur.fetchall()]
 
     cur.execute(
-        """SELECT name, amount, date FROM transactions
+        """SELECT name, amount, direction, date FROM transactions
            WHERE profile_id=%s ORDER BY date DESC LIMIT 8""",
         (profile_id,),
     )
-    recent = [{"name": r["name"], "amount": float(r["amount"]), "date": str(r["date"])} for r in cur.fetchall()]
+    recent = [
+        {"name": r["name"],
+         "amount": float(r["amount"]) * (-1 if r["direction"] == "outflow" else 1),
+         "date": str(r["date"])}
+        for r in cur.fetchall()
+    ]
 
     cur.execute(
         "SELECT title, target_amount, current_amount, target_date FROM goals WHERE profile_id=%s AND status='active'",
