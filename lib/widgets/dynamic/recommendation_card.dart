@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../main.dart';
 
 class RecommendationCard extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -21,41 +22,47 @@ class _RecommendationCardState extends State<RecommendationCard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A3A2A), Color(0xFF1E2A3A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.greenAccent.withOpacity(0.3)),
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            const Icon(Icons.lightbulb_outline, color: Colors.greenAccent, size: 16),
-            const SizedBox(width: 6),
-            Expanded(child: Text(title, style: const TextStyle(color: Colors.greenAccent, fontSize: 14, fontWeight: FontWeight.w600))),
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(8)),
+              child: const Icon(Icons.lightbulb_outline, color: Colors.white, size: 14),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(title, style: const TextStyle(color: AppColors.ink, fontSize: 14, fontWeight: FontWeight.w600))),
           ]),
           if (body.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(body, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            const SizedBox(height: 8),
+            Text(body, style: const TextStyle(color: AppColors.inkMid, fontSize: 13, height: 1.4)),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           if (_status == _Status.idle)
             Row(children: [
-              _chip(action, Colors.greenAccent, () => setState(() => _status = _Status.accepted)),
+              _chip(action, true, () => setState(() => _status = _Status.accepted)),
               const SizedBox(width: 8),
-              _chip('Snooze', Colors.white24, () => setState(() => _status = _Status.snoozed)),
+              _chip('Snooze', false, () => setState(() => _status = _Status.snoozed)),
               const SizedBox(width: 8),
-              _chip('Dismiss', Colors.white12, () => setState(() => _status = _Status.dismissed)),
+              _chip('Dismiss', false, () => setState(() => _status = _Status.dismissed)),
             ])
           else
-            Text(
-              _status == _Status.accepted ? '✓ Accepted' : _status == _Status.snoozed ? '⏰ Snoozed' : '✕ Dismissed',
-              style: TextStyle(
-                color: _status == _Status.accepted ? Colors.greenAccent : Colors.white38,
-                fontSize: 13,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(20)),
+              child: Text(
+                _status == _Status.accepted ? 'Accepted' : _status == _Status.snoozed ? 'Snoozed' : 'Dismissed',
+                style: TextStyle(
+                  color: _status == _Status.accepted ? AppColors.green : AppColors.inkMid,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
         ],
@@ -63,17 +70,17 @@ class _RecommendationCardState extends State<RecommendationCard> {
     );
   }
 
-  Widget _chip(String label, Color color, VoidCallback onTap) {
+  Widget _chip(String label, bool primary, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
+          color: primary ? AppColors.ink : AppColors.card,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.4)),
+          border: Border.all(color: primary ? AppColors.ink : AppColors.border),
         ),
-        child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500)),
+        child: Text(label, style: TextStyle(color: primary ? Colors.white : AppColors.inkMid, fontSize: 12, fontWeight: FontWeight.w500)),
       ),
     );
   }
