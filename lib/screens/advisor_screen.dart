@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:provider/provider.dart';
 import '../models/chat_message.dart';
 import '../services/chat_provider.dart';
@@ -153,10 +154,30 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                 bottomRight: Radius.circular(isUser ? 4 : 16),
               ),
             ),
-            child: Text(
-              msg.text,
-              style: TextStyle(color: isUser ? Colors.black87 : Colors.white, fontSize: 14, height: 1.4),
-            ),
+            child: isUser
+                ? Text(msg.text, style: const TextStyle(color: Colors.black87, fontSize: 14, height: 1.4))
+                : MarkdownBody(
+                    data: msg.text,
+                    styleSheet: MarkdownStyleSheet(
+                      p: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                      strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      em: const TextStyle(color: Colors.white70, fontStyle: FontStyle.italic, fontSize: 14),
+                      code: const TextStyle(color: Color(0xFF4FC3F7), fontFamily: 'monospace', fontSize: 13),
+                      codeblockDecoration: BoxDecoration(
+                        color: Colors.black26,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      listBullet: const TextStyle(color: Colors.white70, fontSize: 14),
+                      h1: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      h2: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      h3: const TextStyle(color: Color(0xFF4FC3F7), fontSize: 14, fontWeight: FontWeight.w600),
+                      blockquoteDecoration: const BoxDecoration(
+                        border: Border(left: BorderSide(color: Color(0xFF4FC3F7), width: 3)),
+                        color: Colors.black12,
+                      ),
+                      blockquote: const TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                  ),
           ),
           if (!isUser && msg.widgets.isNotEmpty)
             Padding(
