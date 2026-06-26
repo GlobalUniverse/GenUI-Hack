@@ -13,7 +13,7 @@ cp .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
 
-Defaults use SQLite plus seeded demo data. Set `DATABASE_URL` to a Supabase Postgres connection string when ready.
+Defaults use SQLite for local persistence. Set `DATABASE_URL` to a Supabase Postgres connection string when ready. Snapshot/advisor routes require a Plaid Sandbox item to be connected and synced first.
 
 ## Core Endpoints
 

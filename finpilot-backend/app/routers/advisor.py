@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -13,5 +13,8 @@ router = APIRouter(prefix="/api", tags=["advisor"])
 @router.post("/advisor", response_model=AdvisorResponse)
 def ask_advisor(request: AdvisorRequest, db: Session = Depends(get_db)) -> AdvisorResponse:
     settings = get_settings()
-    snapshot = SnapshotService(settings).get_snapshot(db, request.profile_id)
+    try:
+        snapshot = SnapshotService(settings).get_snapshot(db, request.profile_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return GeminiAdvisor(settings).answer(request.message, snapshot, request.channel)

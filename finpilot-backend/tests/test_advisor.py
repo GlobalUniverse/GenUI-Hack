@@ -12,21 +12,14 @@ def test_health_defaults() -> None:
     assert response.json()["ok"] is True
 
 
-def test_snapshot_seeded() -> None:
+def test_snapshot_requires_plaid_data() -> None:
     response = client.get("/api/snapshot")
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["source"] == "seeded"
-    assert payload["accounts"]
-    assert payload["alerts"]
+    assert response.status_code == 404
 
 
-def test_advisor_fallback_dinner() -> None:
+def test_advisor_requires_plaid_data() -> None:
     response = client.post(
         "/api/advisor",
         json={"profile_id": "demo", "message": "Can I afford a $120 dinner tonight?"},
     )
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["source"] == "fallback"
-    assert any(widget["type"] == "recommendation_card" for widget in payload["widgets"])
+    assert response.status_code == 404

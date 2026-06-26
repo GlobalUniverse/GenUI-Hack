@@ -1,5 +1,5 @@
+from plaid import ApiClient, Configuration, Environment
 from plaid.api import plaid_api
-from plaid.configuration import Configuration
 from plaid.model.country_code import CountryCode
 from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
@@ -18,13 +18,13 @@ class PlaidService:
             raise ValueError("Only Plaid Sandbox is supported for this hackathon backend.")
 
         config = Configuration(
-            host="https://sandbox.plaid.com",
+            host=Environment.Sandbox,
             api_key={
                 "clientId": settings.plaid_client_id or "",
                 "secret": settings.plaid_secret or "",
             },
         )
-        self.client = plaid_api.PlaidApi(config)
+        self.client = plaid_api.PlaidApi(ApiClient(config))
 
     def require_configured(self) -> None:
         if not self.settings.plaid_configured:

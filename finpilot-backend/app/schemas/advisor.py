@@ -38,7 +38,7 @@ class AdvisorResponse(BaseModel):
     text: str
     widgets: list[WidgetSpec] = Field(default_factory=list)
     source: Literal["gemini", "fallback"] = "fallback"
-    snapshot_source: str = "seeded"
+    snapshot_source: str = "plaid_sandbox"
     follow_ups: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     intent: str | None = None

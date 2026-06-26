@@ -19,7 +19,6 @@ class Settings(BaseSettings):
     plaid_secret: str | None = Field(None, alias="PLAID_SECRET")
     plaid_env: str = Field("sandbox", alias="PLAID_ENV")
 
-    use_seeded_data: bool = Field(True, alias="USE_SEEDED_DATA")
     demo_profile_id: str = Field("demo", alias="DEMO_PROFILE_ID")
 
     @property

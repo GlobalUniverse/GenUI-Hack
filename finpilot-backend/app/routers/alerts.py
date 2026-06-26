@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -11,5 +11,8 @@ router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 
 @router.post("/check", response_model=list[AlertSnapshot])
 def check_alerts(profile_id: str = "demo", db: Session = Depends(get_db)) -> list[AlertSnapshot]:
-    snapshot = SnapshotService(get_settings()).get_snapshot(db, profile_id)
+    try:
+        snapshot = SnapshotService(get_settings()).get_snapshot(db, profile_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return snapshot.alerts

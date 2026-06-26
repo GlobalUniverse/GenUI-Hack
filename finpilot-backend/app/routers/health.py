@@ -13,5 +13,4 @@ def health() -> dict:
         "gemini_configured": settings.gemini_configured,
         "plaid_configured": settings.plaid_configured,
         "supabase_configured": settings.supabase_configured,
-        "use_seeded_data": settings.use_seeded_data,
     }

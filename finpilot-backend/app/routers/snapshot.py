@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -12,4 +12,7 @@ router = APIRouter(prefix="/api", tags=["snapshot"])
 @router.get("/snapshot", response_model=FinancialSnapshot)
 def get_snapshot(profile_id: str | None = None, db: Session = Depends(get_db)) -> FinancialSnapshot:
     service = SnapshotService(get_settings())
-    return service.get_snapshot(db, profile_id)
+    try:
+        return service.get_snapshot(db, profile_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

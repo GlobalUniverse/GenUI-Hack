@@ -1,6 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.db.session import get_db
+from app.repositories import replace_plaid_snapshot, store_plaid_item
 from app.schemas.plaid import (
     ExchangeTokenRequest,
     ExchangeTokenResponse,
@@ -28,10 +31,23 @@ def create_sandbox_public_token(request: SandboxPublicTokenRequest) -> SandboxPu
 
 
 @router.post("/exchange-token", response_model=ExchangeTokenResponse)
-def exchange_token(request: ExchangeTokenRequest) -> ExchangeTokenResponse:
+def exchange_token(
+    request: ExchangeTokenRequest, db: Session = Depends(get_db)
+) -> ExchangeTokenResponse:
     try:
-        payload = PlaidService(get_settings()).exchange_public_token(request.public_token)
-        return ExchangeTokenResponse(item_id=payload.get("item_id"), stored=False, snapshot_synced=False)
+        service = PlaidService(get_settings())
+        payload = service.exchange_public_token(request.public_token)
+        store_plaid_item(
+            db,
+            profile_id=request.profile_id,
+            access_token=payload["access_token"],
+            plaid_item_id=payload.get("item_id"),
+        )
+        sync_payload = service.sync_transactions(payload["access_token"])
+        replace_plaid_snapshot(db, profile_id=request.profile_id, plaid_payload=sync_payload)
+        return ExchangeTokenResponse(
+            item_id=payload.get("item_id"), stored=True, snapshot_synced=True
+        )
     except Exception as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 

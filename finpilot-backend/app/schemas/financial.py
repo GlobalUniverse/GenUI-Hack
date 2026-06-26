@@ -63,7 +63,7 @@ class AlertSnapshot(BaseModel):
 
 class FinancialSnapshot(BaseModel):
     profile_id: str
-    source: Literal["seeded", "plaid_sandbox", "supabase"]
+    source: Literal["plaid_sandbox", "supabase"]
     as_of: datetime
     accounts: list[AccountSnapshot]
     transactions: list[TransactionSnapshot]
