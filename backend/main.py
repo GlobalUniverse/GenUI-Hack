@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg2
 import psycopg2.extras
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -29,59 +29,152 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Mock data (matches Flutter app mock, used as fallback)
+# Demo accounts (hardcoded -- no real auth backend exists for the mock demo)
+# ---------------------------------------------------------------------------
+
+DEMO_USERS = {
+    "alex@finpilot.app": {"password": "demo123", "profile_id": "alex"},
+    "jordan@finpilot.app": {"password": "demo123", "profile_id": "jordan"},
+    "sam@finpilot.app": {"password": "demo123", "profile_id": "sam"},
+}
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/login")
+def login(req: LoginRequest):
+    user = DEMO_USERS.get(req.email.strip().lower())
+    if not user or user["password"] != req.password:
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+    return {"profile_id": user["profile_id"]}
+
+
+# ---------------------------------------------------------------------------
+# Mock data -- one persona per demo account (matches the Flutter GenUI
+# dashboard's layout/tabs vocabulary in lib/screens/dashboard_screen.dart)
 # ---------------------------------------------------------------------------
 
 def _now():
     return datetime.now(timezone.utc)
 
-MOCK_SNAPSHOT = {
-    "checking_balance": 1284.50,
-    "savings_balance": 3420.00,
-    "monthly_income": 4200.00,
-    "monthly_spending": 3180.00,
+
+MOCK_ALEX = {
+    "checking_balance": 142.18,
+    "savings_balance": 0.0,
+    "monthly_income": 3100.00,
+    "monthly_spending": 3340.55,
+    "profile_name": "Alex Chen",
+    "profile_tagline": "Checking balance trending toward zero",
+    "layout": ["critical_banner", "overdraft_forecast", "balances", "cashflow", "merchant_breakdown", "weekly_spending", "spending_chart", "transactions"],
+    "tabs": ["dashboard", "advisor"],
+    "overdraft_days": 3,
+    "critical_message": "Your checking balance will go negative in about 3 days at this spending rate.",
+    "net_worth": 142.18,
+    "net_worth_change": -240.0,
+    "savings_rate": 0,
+    "top_merchants": [
+        {"name": "DoorDash", "amount": 312.40, "count": 14},
+        {"name": "Uber", "amount": 248.75, "count": 11},
+        {"name": "Starbucks", "amount": 96.20, "count": 9},
+    ],
+    "weekly_spending": [62.0, 48.5, 91.0, 120.0, 138.5, 165.0, 210.0],
     "top_categories": [
         {"name": "Dining", "amount": 620, "delta": 18},
         {"name": "Rideshare", "amount": 310, "delta": 42},
-        {"name": "Groceries", "amount": 480, "delta": -5},
-        {"name": "Entertainment", "amount": 210, "delta": 12},
-        {"name": "Utilities", "amount": 190, "delta": 0},
+        {"name": "Groceries", "amount": 210, "delta": -5},
+        {"name": "Entertainment", "amount": 180, "delta": 12},
     ],
     "recent_transactions": [
-        {"name": "Uber", "amount": -24.50, "category": "Rideshare",
-         "date": (_now() - timedelta(hours=3)).isoformat()},
-        {"name": "Whole Foods", "amount": -87.20, "category": "Groceries",
-         "date": (_now() - timedelta(days=1)).isoformat()},
-        {"name": "Chipotle", "amount": -13.80, "category": "Dining",
-         "date": (_now() - timedelta(days=1)).isoformat()},
-        {"name": "Netflix", "amount": -15.99, "category": "Entertainment",
-         "date": (_now() - timedelta(days=2)).isoformat()},
-        {"name": "Direct Deposit", "amount": 2100.00, "category": "Income",
-         "date": (_now() - timedelta(days=3)).isoformat()},
+        {"name": "DoorDash", "amount": -28.40, "category": "Dining", "date": (_now() - timedelta(hours=5)).isoformat()},
+        {"name": "Uber", "amount": -24.50, "category": "Rideshare", "date": (_now() - timedelta(hours=18)).isoformat()},
+        {"name": "Starbucks", "amount": -7.20, "category": "Dining", "date": (_now() - timedelta(days=1)).isoformat()},
+        {"name": "DoorDash", "amount": -33.10, "category": "Dining", "date": (_now() - timedelta(days=1)).isoformat()},
+        {"name": "Direct Deposit", "amount": 1550.00, "category": "Income", "date": (_now() - timedelta(days=4)).isoformat()},
     ],
-    "goals": [
-        {
-            "name": "Emergency Fund",
-            "target_amount": 5000,
-            "current_amount": 3420,
-            "target_date": (_now() + timedelta(days=90)).date().isoformat(),
-        },
-        {
-            "name": "Travel Fund",
-            "target_amount": 2000,
-            "current_amount": 640,
-            "target_date": (_now() + timedelta(days=180)).date().isoformat(),
-        },
-    ],
+    "goals": [],
     "upcoming_bills": [
-        {"name": "Rent", "amount": 1500,
-         "due_date": (_now() + timedelta(days=2)).date().isoformat()},
-        {"name": "Electric", "amount": 95,
-         "due_date": (_now() + timedelta(days=8)).date().isoformat()},
-        {"name": "Spotify", "amount": 9.99,
-         "due_date": (_now() + timedelta(days=12)).date().isoformat()},
+        {"name": "Rent", "amount": 1400, "due_date": (_now() + timedelta(days=5)).date().isoformat()},
     ],
 }
+
+MOCK_JORDAN = {
+    "checking_balance": 4820.32,
+    "savings_balance": 17938.10,
+    "monthly_income": 6200.00,
+    "monthly_spending": 3596.00,
+    "profile_name": "Jordan Kim",
+    "profile_tagline": "Healthy savings rate, on pace for every goal",
+    "layout": ["balances", "net_worth", "savings_rate", "cashflow", "goals", "spending_chart", "transactions"],
+    "tabs": ["dashboard", "advisor", "goals"],
+    "overdraft_days": 0,
+    "critical_message": "",
+    "net_worth": 22758.42,
+    "net_worth_change": 1180.0,
+    "savings_rate": 42,
+    "top_merchants": [
+        {"name": "Whole Foods", "amount": 410.0, "count": 6},
+        {"name": "REI", "amount": 180.0, "count": 2},
+    ],
+    "weekly_spending": [45.0, 38.0, 52.0, 40.0, 61.0, 88.0, 30.0],
+    "top_categories": [
+        {"name": "Groceries", "amount": 410, "delta": -3},
+        {"name": "Utilities", "amount": 220, "delta": 0},
+        {"name": "Entertainment", "amount": 150, "delta": 5},
+    ],
+    "recent_transactions": [
+        {"name": "Whole Foods", "amount": -64.20, "category": "Groceries", "date": (_now() - timedelta(days=1)).isoformat()},
+        {"name": "Direct Deposit", "amount": 3100.00, "category": "Income", "date": (_now() - timedelta(days=3)).isoformat()},
+        {"name": "Auto-transfer to Savings", "amount": -1200.00, "category": "Transfer", "date": (_now() - timedelta(days=3)).isoformat()},
+        {"name": "REI", "amount": -89.00, "category": "Shopping", "date": (_now() - timedelta(days=6)).isoformat()},
+    ],
+    "goals": [
+        {"name": "Emergency Fund", "target_amount": 15000, "current_amount": 15000, "target_date": (_now() + timedelta(days=30)).date().isoformat()},
+        {"name": "House Down Payment", "target_amount": 60000, "current_amount": 21000, "target_date": (_now() + timedelta(days=900)).date().isoformat()},
+        {"name": "Travel Fund", "target_amount": 4000, "current_amount": 2400, "target_date": (_now() + timedelta(days=120)).date().isoformat()},
+    ],
+    "upcoming_bills": [
+        {"name": "Mortgage", "amount": 1850, "due_date": (_now() + timedelta(days=9)).date().isoformat()},
+    ],
+}
+
+MOCK_SAM = {
+    "checking_balance": -42.50,
+    "savings_balance": 110.00,
+    "monthly_income": 2400.00,
+    "monthly_spending": 2615.00,
+    "profile_name": "Sam Rivera",
+    "profile_tagline": "Rent is overdue and checking is already negative",
+    "layout": ["critical_banner", "overdraft_forecast", "balances", "cashflow", "upcoming_bills", "transactions"],
+    "tabs": ["dashboard", "advisor"],
+    "overdraft_days": 0,
+    "critical_message": "Rent ($1,350.00) is overdue and your checking balance is already negative.",
+    "net_worth": 67.50,
+    "net_worth_change": -310.0,
+    "savings_rate": 0,
+    "top_merchants": [],
+    "weekly_spending": [12.0, 15.0, 9.0, 22.0, 18.0, 30.0, 14.0],
+    "top_categories": [
+        {"name": "Rent And Utilities", "amount": 1450, "delta": 8},
+        {"name": "Groceries", "amount": 180, "delta": 0},
+    ],
+    "recent_transactions": [
+        {"name": "Electric Co", "amount": -88.40, "category": "Rent And Utilities", "date": (_now() - timedelta(days=1)).isoformat()},
+        {"name": "Gas Station", "amount": -32.00, "category": "Transport", "date": (_now() - timedelta(days=2)).isoformat()},
+        {"name": "Paycheck", "amount": 1100.00, "category": "Income", "date": (_now() - timedelta(days=5)).isoformat()},
+    ],
+    "goals": [],
+    "upcoming_bills": [
+        {"name": "Rent", "amount": 1350, "due_date": (_now() - timedelta(days=2)).date().isoformat()},
+        {"name": "Phone Bill", "amount": 65, "due_date": (_now() + timedelta(days=2)).date().isoformat()},
+    ],
+}
+
+MOCK_BY_PROFILE = {"alex": MOCK_ALEX, "jordan": MOCK_JORDAN, "sam": MOCK_SAM}
+
+MOCK_SNAPSHOT = MOCK_ALEX
 
 # ---------------------------------------------------------------------------
 # Database helpers
@@ -94,7 +187,7 @@ def _get_conn():
     return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
 
 
-def _fetch_snapshot_from_db() -> dict:
+def _fetch_snapshot_from_db(profile_id: str) -> dict:
     with _get_conn() as conn:
         with conn.cursor() as cur:
             # Accounts
@@ -103,7 +196,7 @@ def _fetch_snapshot_from_db() -> dict:
                 SELECT type, balance FROM accounts
                 WHERE profile_id = %s
                 """,
-                (PROFILE_ID,),
+                (profile_id,),
             )
             accounts = {row["type"]: float(row["balance"]) for row in cur.fetchall()}
 
@@ -117,7 +210,7 @@ def _fetch_snapshot_from_db() -> dict:
                 WHERE profile_id = %s
                   AND date >= date_trunc('month', now())
                 """,
-                (PROFILE_ID,),
+                (profile_id,),
             )
             row = cur.fetchone()
             monthly_income = float(row["income"])
@@ -151,7 +244,7 @@ def _fetch_snapshot_from_db() -> dict:
                 ORDER BY amount DESC
                 LIMIT 5
                 """,
-                (PROFILE_ID,),
+                (profile_id,),
             )
             top_categories = [
                 {"name": r["name"], "amount": float(r["amount"]), "delta": float(r["delta"])}
@@ -167,7 +260,7 @@ def _fetch_snapshot_from_db() -> dict:
                 ORDER BY date DESC
                 LIMIT 10
                 """,
-                (PROFILE_ID,),
+                (profile_id,),
             )
             recent_transactions = [
                 {
@@ -187,7 +280,7 @@ def _fetch_snapshot_from_db() -> dict:
                 WHERE profile_id = %s
                 ORDER BY target_date ASC
                 """,
-                (PROFILE_ID,),
+                (profile_id,),
             )
             goals = [
                 {
@@ -209,7 +302,7 @@ def _fetch_snapshot_from_db() -> dict:
                 ORDER BY due_date ASC
                 LIMIT 5
                 """,
-                (PROFILE_ID,),
+                (profile_id,),
             )
             upcoming_bills = [
                 {
@@ -232,17 +325,22 @@ def _fetch_snapshot_from_db() -> dict:
     }
 
 
+def _snapshot_for(profile_id: str) -> dict:
+    """DB-backed snapshot if reachable, else the per-profile mock persona."""
+    try:
+        return _fetch_snapshot_from_db(profile_id)
+    except Exception:
+        return MOCK_BY_PROFILE.get(profile_id, MOCK_ALEX)
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
 
 @app.get("/snapshot")
-def get_snapshot():
-    try:
-        return _fetch_snapshot_from_db()
-    except Exception:
-        return MOCK_SNAPSHOT
+def get_snapshot(profile_id: str = "alex"):
+    return _snapshot_for(profile_id)
 
 
 # ---------------------------------------------------------------------------
@@ -274,14 +372,12 @@ No markdown, no extra keys."""
 class AdvisorRequest(BaseModel):
     question: str
     history: list[dict] = []
+    profile_id: str = "alex"
 
 
 @app.post("/advisor")
 def ask_advisor(req: AdvisorRequest):
-    try:
-        snapshot = _fetch_snapshot_from_db()
-    except Exception:
-        snapshot = MOCK_SNAPSHOT
+    snapshot = _snapshot_for(req.profile_id)
 
     history_text = ""
     if req.history:
