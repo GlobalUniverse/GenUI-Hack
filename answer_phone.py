@@ -14,7 +14,7 @@ load_dotenv()
 
 app = FastAPI()
 
-GEMINI_MODEL = "gemini-2.5-flash-preview-native-audio-dialog"
+GEMINI_MODEL = "models/gemini-2.5-flash-native-audio-preview-12-2025"
 SYSTEM_PROMPT = (
     "You are FinPilot, an AI financial advisor on a phone call. "
     "Be concise — this is voice, so keep replies to 2-3 sentences max. "
@@ -60,9 +60,12 @@ async def media_stream(websocket: WebSocket):
                     if event == "start":
                         stream_sid = data["start"]["streamSid"]
                         # Kick off the conversation
-                        await session.send(
-                            input="Greet the user as FinPilot and ask what financial question you can help with.",
-                            end_of_turn=True,
+                        await session.send_client_content(
+                            turns=types.Content(
+                                role="user",
+                                parts=[types.Part(text="Greet the user as FinPilot and ask what financial question you can help with.")]
+                            ),
+                            turn_complete=True,
                         )
                     elif event == "media":
                         ulaw = base64.b64decode(data["media"]["payload"])
