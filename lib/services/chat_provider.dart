@@ -25,8 +25,10 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     final history = messages
-        .where((m) => m.role == MessageRole.user)
-        .map((m) => {'role': 'user', 'content': m.text})
+        .map((m) => {
+          'role': m.role == MessageRole.user ? 'user' : 'assistant',
+          'content': m.text,
+        })
         .toList();
 
     final response = await _api.askAdvisor(text, history);
