@@ -29,7 +29,7 @@ class DashboardScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Good morning', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                          Text(_greeting(), style: const TextStyle(color: Colors.white54, fontSize: 14)),
                           const SizedBox(height: 4),
                           const Text('Here\'s your money.', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 24),
@@ -56,6 +56,13 @@ class DashboardScreen extends StatelessWidget {
               ),
       ),
     );
+  }
+
+  String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
   }
 
   Widget _balanceRow(NumberFormat fmt, double checking, double savings) {
