@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../main.dart';
 import '../services/chat_provider.dart';
 import '../widgets/dynamic/spending_chart_widget.dart';
 import '../widgets/dynamic/transaction_table_widget.dart';
@@ -23,39 +24,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final fmt = NumberFormat.currency(symbol: '\$', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1923),
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: snap == null
             ? const SingleChildScrollView(child: DashboardSkeleton())
             : RefreshIndicator(
-                color: const Color(0xFF4FC3F7),
-                backgroundColor: const Color(0xFF1E2A3A),
+                color: AppColors.ink,
+                backgroundColor: AppColors.card,
                 onRefresh: () => context.read<ChatProvider>().refreshSnapshot(),
                 child: CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                        padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_greeting(), style: const TextStyle(color: Colors.white54, fontSize: 14)),
-                            const SizedBox(height: 4),
-                            const Text('Here\'s your money.', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+                            _header(),
                             const SizedBox(height: 24),
                             _balanceRow(fmt, snap.checkingBalance, snap.savingsBalance),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
                             _cashflowBanner(fmt, snap.monthlyIncome, snap.monthlySpending),
-                            const SizedBox(height: 20),
-                            if (snap.upcomingBills.any((b) => b.dueDate.difference(DateTime.now()).inDays <= 2))
+                            if (snap.upcomingBills.any((b) => b.dueDate.difference(DateTime.now()).inDays <= 2)) ...[
+                              const SizedBox(height: 10),
                               _alertBanner(snap.upcomingBills.firstWhere((b) => b.dueDate.difference(DateTime.now()).inDays <= 2), fmt),
-                            const SizedBox(height: 20),
+                            ],
+                            const SizedBox(height: 24),
+                            _sectionLabel('Spending'),
+                            const SizedBox(height: 10),
                             SpendingChartWidget(categories: snap.topCategories),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 24),
+                            _sectionLabel('Goals'),
+                            const SizedBox(height: 10),
                             GoalProgressWidget(data: const {}, goals: snap.goals),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 24),
+                            _sectionLabel('Upcoming Bills'),
+                            const SizedBox(height: 10),
                             UpcomingBillsWidget(bills: snap.upcomingBills),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 24),
+                            _sectionLabel('Recent Transactions'),
+                            const SizedBox(height: 10),
                             TransactionTableWidget(transactions: snap.recentTransactions),
                             const SizedBox(height: 100),
                           ],
@@ -76,26 +84,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return 'Good evening';
   }
 
+  Widget _header() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(_greeting(), style: const TextStyle(color: AppColors.inkMid, fontSize: 13, fontWeight: FontWeight.w400)),
+          const SizedBox(height: 2),
+          const Text("Here's your money.", style: TextStyle(color: AppColors.ink, fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.5)),
+        ]),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: AppColors.ink,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Text('Live', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionLabel(String label) {
+    return Text(label.toUpperCase(), style: const TextStyle(color: AppColors.inkLight, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8));
+  }
+
   Widget _balanceRow(NumberFormat fmt, double checking, double savings) {
     return Row(children: [
-      Expanded(child: _balanceTile('Checking', checking, fmt, const Color(0xFF4FC3F7))),
-      const SizedBox(width: 12),
-      Expanded(child: _balanceTile('Savings', savings, fmt, Colors.greenAccent)),
+      Expanded(child: _balanceTile('Checking', checking, fmt)),
+      const SizedBox(width: 8),
+      Expanded(child: _balanceTile('Savings', savings, fmt)),
     ]);
   }
 
-  Widget _balanceTile(String label, double value, NumberFormat fmt, Color accent) {
+  Widget _balanceTile(String label, double value, NumberFormat fmt) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 12)),
-        const SizedBox(height: 6),
-        Text(fmt.format(value), style: TextStyle(color: accent, fontSize: 22, fontWeight: FontWeight.bold)),
+        Text(label.toUpperCase(), style: const TextStyle(color: AppColors.inkLight, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.6)),
+        const SizedBox(height: 8),
+        Text(fmt.format(value), style: const TextStyle(color: AppColors.ink, fontSize: 26, fontWeight: FontWeight.w700, letterSpacing: -0.5)),
       ]),
     );
   }
@@ -103,46 +136,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _cashflowBanner(NumberFormat fmt, double income, double spending) {
     final net = income - spending;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        _cfItem('Income', fmt.format(income), Colors.greenAccent),
+        _cfItem('Income', fmt.format(income), AppColors.green),
         _cfDivider(),
-        _cfItem('Spent', fmt.format(spending), Colors.white70),
+        _cfItem('Spent', fmt.format(spending), AppColors.inkMid),
         _cfDivider(),
-        _cfItem('Net', (net >= 0 ? '+' : '') + fmt.format(net), net >= 0 ? Colors.greenAccent : Colors.redAccent),
+        _cfItem('Net', (net >= 0 ? '+' : '') + fmt.format(net), net >= 0 ? AppColors.green : AppColors.red),
       ]),
     );
   }
 
   Widget _cfItem(String label, String value, Color color) {
     return Column(children: [
-      Text(label, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-      const SizedBox(height: 4),
-      Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w600)),
+      Text(label.toUpperCase(), style: const TextStyle(color: AppColors.inkLight, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+      const SizedBox(height: 5),
+      Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w700)),
     ]);
   }
 
-  Widget _cfDivider() => Container(height: 30, width: 1, color: Colors.white10);
+  Widget _cfDivider() => Container(height: 28, width: 1, color: AppColors.border);
 
   Widget _alertBanner(bill, NumberFormat fmt) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF2A1E0F),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orangeAccent.withOpacity(0.5)),
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.amber.withOpacity(0.4)),
       ),
       child: Row(children: [
-        const Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent, size: 20),
+        const Icon(Icons.warning_amber_rounded, color: AppColors.amber, size: 18),
         const SizedBox(width: 10),
         Expanded(child: Text(
-          '${bill.name} (${fmt.format(bill.amount)}) is due ${bill.dueDate.difference(DateTime.now()).inDays <= 0 ? "today" : "tomorrow"}. Check your buffer.',
-          style: const TextStyle(color: Colors.white70, fontSize: 13),
+          '${bill.name} (${fmt.format(bill.amount)}) due ${bill.dueDate.difference(DateTime.now()).inDays <= 0 ? "today" : "tomorrow"}.',
+          style: const TextStyle(color: Color(0xFF92400E), fontSize: 13, fontWeight: FontWeight.w500),
         )),
       ]),
     );

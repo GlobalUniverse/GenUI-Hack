@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../main.dart';
 
 class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
@@ -42,7 +43,7 @@ class SkeletonBox extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: const Color(0xFF2A3A4A),
+          color: AppColors.divider,
           borderRadius: BorderRadius.circular(radius),
         ),
       ),
@@ -96,9 +97,9 @@ class CardSkeleton extends StatelessWidget {
         width: double.infinity,
         height: height,
         decoration: BoxDecoration(
-          color: const Color(0xFF1E2A3A),
+          color: AppColors.card,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: AppColors.border),
         ),
       ),
     );
