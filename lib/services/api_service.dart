@@ -7,9 +7,26 @@ import '../models/financial_snapshot.dart';
 class ApiService {
   static String get _base => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000';
 
-  Future<FinancialSnapshot> getSnapshot() async {
+  // Returns profile_id string on success, null on failure
+  Future<Map<String, dynamic>?> login(String email, String password) async {
     try {
-      final res = await http.get(Uri.parse('$_base/snapshot')).timeout(const Duration(seconds: 5));
+      final res = await http.post(
+        Uri.parse('$_base/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      ).timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<FinancialSnapshot> getSnapshot({String profileId = 'alex'}) async {
+    try {
+      final res = await http.get(
+        Uri.parse('$_base/snapshot?profile_id=$profileId'),
+      ).timeout(const Duration(seconds: 5));
       if (res.statusCode == 200) {
         return FinancialSnapshot.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
       }
@@ -17,12 +34,12 @@ class ApiService {
     return FinancialSnapshot.mock();
   }
 
-  Future<AdvisorResponse> askAdvisor(String question, List<Map<String, String>> history) async {
+  Future<AdvisorResponse> askAdvisor(String question, List<Map<String, String>> history, {String profileId = 'alex'}) async {
     try {
       final res = await http.post(
         Uri.parse('$_base/advisor'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'question': question, 'history': history}),
+        body: jsonEncode({'question': question, 'history': history, 'profile_id': profileId}),
       ).timeout(const Duration(seconds: 15));
       if (res.statusCode == 200) {
         return AdvisorResponse.fromJson(jsonDecode(res.body) as Map<String, dynamic>);

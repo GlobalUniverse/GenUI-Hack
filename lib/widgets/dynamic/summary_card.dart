@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../main.dart';
 
 class SummaryCardWidget extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -16,25 +17,26 @@ class SummaryCardWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: const TextStyle(color: Colors.white54, fontSize: 13)),
-            const SizedBox(height: 4),
-            if (subtitle.isNotEmpty)
-              Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+            Text(label.toUpperCase(), style: const TextStyle(color: AppColors.inkLight, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.6)),
+            if (subtitle.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(subtitle, style: const TextStyle(color: AppColors.inkMid, fontSize: 12)),
+            ],
           ]),
           Text(
             fmt.format(value),
             style: TextStyle(
-              color: value >= 0 ? Colors.greenAccent : Colors.redAccent,
+              color: value >= 0 ? AppColors.green : AppColors.red,
               fontSize: 22,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

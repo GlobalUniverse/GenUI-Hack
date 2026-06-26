@@ -1,3 +1,17 @@
+class MerchantSpend {
+  final String name;
+  final double amount;
+  final int count;
+
+  MerchantSpend({required this.name, required this.amount, required this.count});
+
+  factory MerchantSpend.fromJson(Map<String, dynamic> json) => MerchantSpend(
+        name: json['name'] as String,
+        amount: (json['amount'] as num).toDouble(),
+        count: (json['count'] as num).toInt(),
+      );
+}
+
 class FinancialSnapshot {
   final double checkingBalance;
   final double savingsBalance;
@@ -7,6 +21,19 @@ class FinancialSnapshot {
   final List<Transaction> recentTransactions;
   final List<Goal> goals;
   final List<UpcomingBill> upcomingBills;
+  // GenUI layout fields
+  final List<String> layout;
+  final List<String> tabs;
+  final String profileName;
+  final String profileTagline;
+  // Per-user intelligence fields
+  final int overdraftDays;          // 0 = no risk
+  final String criticalMessage;     // empty = none
+  final double netWorth;            // 0 = not tracked
+  final double netWorthChange;      // monthly delta
+  final int savingsRate;            // % of income saved, 0 = N/A
+  final List<MerchantSpend> topMerchants;
+  final List<double> weeklySpending; // last 7 days (Mon–Sun)
 
   FinancialSnapshot({
     required this.checkingBalance,
@@ -17,6 +44,17 @@ class FinancialSnapshot {
     required this.recentTransactions,
     required this.goals,
     required this.upcomingBills,
+    this.layout = const ['balances', 'cashflow', 'spending_chart', 'goals', 'upcoming_bills', 'transactions'],
+    this.tabs = const ['dashboard', 'advisor', 'goals'],
+    this.profileName = '',
+    this.profileTagline = '',
+    this.overdraftDays = 0,
+    this.criticalMessage = '',
+    this.netWorth = 0,
+    this.netWorthChange = 0,
+    this.savingsRate = 0,
+    this.topMerchants = const [],
+    this.weeklySpending = const [],
   });
 
   factory FinancialSnapshot.fromJson(Map<String, dynamic> json) {
@@ -37,6 +75,23 @@ class FinancialSnapshot {
       upcomingBills: (json['upcoming_bills'] as List<dynamic>? ?? [])
           .map((b) => UpcomingBill.fromJson(b as Map<String, dynamic>))
           .toList(),
+      layout: (json['layout'] as List<dynamic>? ?? ['balances', 'cashflow', 'spending_chart'])
+          .map((e) => e as String).toList(),
+      tabs: (json['tabs'] as List<dynamic>? ?? ['dashboard', 'advisor'])
+          .map((e) => e as String).toList(),
+      profileName: json['profile_name'] as String? ?? '',
+      profileTagline: json['profile_tagline'] as String? ?? '',
+      overdraftDays: (json['overdraft_days'] as num? ?? 0).toInt(),
+      criticalMessage: json['critical_message'] as String? ?? '',
+      netWorth: (json['net_worth'] as num? ?? 0).toDouble(),
+      netWorthChange: (json['net_worth_change'] as num? ?? 0).toDouble(),
+      savingsRate: (json['savings_rate'] as num? ?? 0).toInt(),
+      topMerchants: (json['top_merchants'] as List<dynamic>? ?? [])
+          .map((m) => MerchantSpend.fromJson(m as Map<String, dynamic>))
+          .toList(),
+      weeklySpending: (json['weekly_spending'] as List<dynamic>? ?? [])
+          .map((v) => (v as num).toDouble())
+          .toList(),
     );
   }
 
@@ -46,6 +101,10 @@ class FinancialSnapshot {
       savingsBalance: 3420.00,
       monthlyIncome: 4200.00,
       monthlySpending: 3180.00,
+      layout: const ['balances', 'cashflow', 'spending_chart', 'goals', 'upcoming_bills', 'transactions'],
+      tabs: const ['dashboard', 'advisor', 'goals'],
+      profileName: 'Demo User',
+      profileTagline: 'Sample financial data',
       topCategories: [
         CategorySpend(name: 'Dining', amount: 620, delta: 18),
         CategorySpend(name: 'Rideshare', amount: 310, delta: 42),
@@ -67,7 +126,6 @@ class FinancialSnapshot {
       upcomingBills: [
         UpcomingBill(name: 'Rent', amount: 1500, dueDate: DateTime.now().add(const Duration(days: 2))),
         UpcomingBill(name: 'Electric', amount: 95, dueDate: DateTime.now().add(const Duration(days: 8))),
-        UpcomingBill(name: 'Spotify', amount: 9.99, dueDate: DateTime.now().add(const Duration(days: 12))),
       ],
     );
   }
@@ -80,13 +138,11 @@ class CategorySpend {
 
   CategorySpend({required this.name, required this.amount, required this.delta});
 
-  factory CategorySpend.fromJson(Map<String, dynamic> json) {
-    return CategorySpend(
-      name: json['name'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      delta: (json['delta'] as num? ?? 0).toDouble(),
-    );
-  }
+  factory CategorySpend.fromJson(Map<String, dynamic> json) => CategorySpend(
+        name: json['name'] as String,
+        amount: (json['amount'] as num).toDouble(),
+        delta: (json['delta'] as num? ?? 0).toDouble(),
+      );
 }
 
 class Transaction {
@@ -97,14 +153,12 @@ class Transaction {
 
   Transaction({required this.name, required this.amount, required this.category, required this.date});
 
-  factory Transaction.fromJson(Map<String, dynamic> json) {
-    return Transaction(
-      name: json['name'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      category: json['category'] as String,
-      date: DateTime.parse(json['date'] as String),
-    );
-  }
+  factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
+        name: json['name'] as String,
+        amount: (json['amount'] as num).toDouble(),
+        category: json['category'] as String,
+        date: DateTime.parse(json['date'] as String),
+      );
 }
 
 class Goal {
@@ -117,14 +171,12 @@ class Goal {
 
   double get progress => currentAmount / targetAmount;
 
-  factory Goal.fromJson(Map<String, dynamic> json) {
-    return Goal(
-      name: json['name'] as String,
-      targetAmount: (json['target_amount'] as num).toDouble(),
-      currentAmount: (json['current_amount'] as num).toDouble(),
-      targetDate: DateTime.parse(json['target_date'] as String),
-    );
-  }
+  factory Goal.fromJson(Map<String, dynamic> json) => Goal(
+        name: json['name'] as String,
+        targetAmount: (json['target_amount'] as num).toDouble(),
+        currentAmount: (json['current_amount'] as num).toDouble(),
+        targetDate: DateTime.parse(json['target_date'] as String),
+      );
 }
 
 class UpcomingBill {
@@ -134,11 +186,9 @@ class UpcomingBill {
 
   UpcomingBill({required this.name, required this.amount, required this.dueDate});
 
-  factory UpcomingBill.fromJson(Map<String, dynamic> json) {
-    return UpcomingBill(
-      name: json['name'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      dueDate: DateTime.parse(json['due_date'] as String),
-    );
-  }
+  factory UpcomingBill.fromJson(Map<String, dynamic> json) => UpcomingBill(
+        name: json['name'] as String,
+        amount: (json['amount'] as num).toDouble(),
+        dueDate: DateTime.parse(json['due_date'] as String),
+      );
 }
