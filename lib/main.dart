@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'screens/dashboard_screen.dart';
@@ -7,7 +8,9 @@ import 'screens/goals_screen.dart';
 import 'services/chat_provider.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
   runApp(const FinPilotApp());
 }
 
@@ -21,11 +24,21 @@ class FinPilotApp extends StatelessWidget {
       child: MaterialApp(
         title: 'FinPilot',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: const Color(0xFF0F1923),
-          colorScheme: const ColorScheme.dark(
-            primary: Color(0xFF4FC3F7),
-            secondary: Color(0xFF00BFA5),
+        theme: ThemeData(
+          useMaterial3: true,
+          fontFamily: 'SF Pro Display',
+          scaffoldBackgroundColor: AppColors.bg,
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.ink,
+            secondary: AppColors.green,
+            surface: AppColors.card,
+          ),
+          navigationBarTheme: NavigationBarThemeData(
+            backgroundColor: AppColors.card,
+            indicatorColor: AppColors.divider,
+            labelTextStyle: WidgetStateProperty.all(
+              const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.inkMid),
+            ),
           ),
         ),
         home: const AppShell(),
@@ -54,29 +67,51 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: const Color(0xFF0F1923),
-        indicatorColor: const Color(0xFF4FC3F7).withOpacity(0.2),
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard, color: Color(0xFF4FC3F7)),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            selectedIcon: Icon(Icons.auto_awesome, color: Color(0xFF4FC3F7)),
-            label: 'Advisor',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.flag_outlined),
-            selectedIcon: Icon(Icons.flag, color: Color(0xFF4FC3F7)),
-            label: 'Goals',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.card,
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: NavigationBar(
+          backgroundColor: AppColors.card,
+          elevation: 0,
+          indicatorColor: AppColors.divider,
+          selectedIndex: _index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          destinations: [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined, color: AppColors.inkLight),
+              selectedIcon: const Icon(Icons.dashboard, color: AppColors.ink),
+              label: 'Dashboard',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.auto_awesome_outlined, color: AppColors.inkLight),
+              selectedIcon: const Icon(Icons.auto_awesome, color: AppColors.ink),
+              label: 'Advisor',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.flag_outlined, color: AppColors.inkLight),
+              selectedIcon: const Icon(Icons.flag, color: AppColors.ink),
+              label: 'Goals',
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class AppColors {
+  AppColors._();
+
+  static const bg = Color(0xFFF7F7F7);
+  static const card = Color(0xFFFFFFFF);
+  static const border = Color(0xFFEAEAEA);
+  static const divider = Color(0xFFF0F0F0);
+  static const ink = Color(0xFF0A0A0A);
+  static const inkMid = Color(0xFF6B7280);
+  static const inkLight = Color(0xFFB0B0B0);
+  static const green = Color(0xFF16A34A);
+  static const red = Color(0xFFDC2626);
+  static const amber = Color(0xFFF59E0B);
 }

@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../main.dart';
 import '../../models/financial_snapshot.dart';
 
 class SpendingChartWidget extends StatelessWidget {
@@ -9,34 +10,37 @@ class SpendingChartWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = [
-      const Color(0xFF4FC3F7),
-      const Color(0xFFFF8A65),
-      const Color(0xFFA5D6A7),
-      const Color(0xFFCE93D8),
-      const Color(0xFFFFCC02),
+    const barColors = [
+      Color(0xFF0A0A0A),
+      Color(0xFF6B7280),
+      Color(0xFFB0B0B0),
+      Color(0xFFD1D5DB),
+      Color(0xFFE5E7EB),
     ];
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E2A3A),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Spending by Category', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text('BY CATEGORY', style: TextStyle(color: AppColors.inkLight, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8)),
+            Text('This month', style: TextStyle(color: AppColors.inkLight, fontSize: 11)),
+          ]),
           const SizedBox(height: 16),
           SizedBox(
-            height: 180,
+            height: 160,
             child: BarChart(
               BarChartData(
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  getDrawingHorizontalLine: (_) => const FlLine(color: Colors.white10, strokeWidth: 1),
+                  getDrawingHorizontalLine: (_) => const FlLine(color: AppColors.border, strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
@@ -49,11 +53,12 @@ class SpendingChartWidget extends StatelessWidget {
                       getTitlesWidget: (val, _) {
                         final i = val.toInt();
                         if (i < 0 || i >= categories.length) return const SizedBox.shrink();
+                        final name = categories[i].name;
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
-                            categories[i].name.length > 6 ? categories[i].name.substring(0, 6) : categories[i].name,
-                            style: const TextStyle(color: Colors.white54, fontSize: 10),
+                            name.length > 5 ? name.substring(0, 5) : name,
+                            style: const TextStyle(color: AppColors.inkLight, fontSize: 10, fontWeight: FontWeight.w500),
                           ),
                         );
                       },
@@ -61,38 +66,35 @@ class SpendingChartWidget extends StatelessWidget {
                   ),
                 ),
                 barGroups: categories.asMap().entries.map((e) {
-                  final delta = e.value.delta;
                   return BarChartGroupData(x: e.key, barRods: [
                     BarChartRodData(
                       toY: e.value.amount,
-                      color: colors[e.key % colors.length],
-                      width: 20,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                      backDrawRodData: BackgroundBarChartRodData(
-                        show: delta > 0,
-                        toY: e.value.amount * 0.85,
-                        color: Colors.white05,
-                      ),
+                      color: barColors[e.key % barColors.length],
+                      width: 22,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
                     ),
                   ]);
                 }).toList(),
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Wrap(
-            spacing: 12,
+            spacing: 14,
             runSpacing: 6,
             children: categories.asMap().entries.map((e) {
               final d = e.value.delta;
               return Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(width: 8, height: 8, decoration: BoxDecoration(color: colors[e.key % colors.length], shape: BoxShape.circle)),
-                const SizedBox(width: 4),
-                Text('${e.value.name} ', style: const TextStyle(color: Colors.white54, fontSize: 11)),
-                Text(
-                  d == 0 ? '' : '${d > 0 ? '+' : ''}${d.toStringAsFixed(0)}%',
-                  style: TextStyle(color: d > 0 ? Colors.redAccent : Colors.greenAccent, fontSize: 11),
-                ),
+                Container(width: 8, height: 8, decoration: BoxDecoration(color: barColors[e.key % barColors.length], borderRadius: BorderRadius.circular(2))),
+                const SizedBox(width: 5),
+                Text(e.value.name, style: const TextStyle(color: AppColors.inkMid, fontSize: 11)),
+                if (d != 0) ...[
+                  const SizedBox(width: 3),
+                  Text(
+                    '${d > 0 ? '+' : ''}${d.toStringAsFixed(0)}%',
+                    style: TextStyle(color: d > 0 ? AppColors.red : AppColors.green, fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
+                ],
               ]);
             }).toList(),
           ),
