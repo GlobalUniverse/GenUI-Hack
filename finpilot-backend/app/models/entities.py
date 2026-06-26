@@ -104,3 +104,39 @@ class Alert(Base):
     payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(String, default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Liability(Base):
+    """Mirrors Plaid's real Liabilities response shape for student loans and mortgages.
+
+    Plaid Sandbox custom users only support overriding student loan liabilities
+    (not mortgage), so mortgage rows may be seeded directly rather than synced
+    from Plaid -- the shape is identical either way, only the data source differs.
+    """
+
+    __tablename__ = "liabilities"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    profile_id: Mapped[str] = mapped_column(ForeignKey("profiles.id"), index=True)
+    account_id: Mapped[str | None] = mapped_column(ForeignKey("accounts.id"), nullable=True)
+    loan_type: Mapped[str] = mapped_column(String)  # "student" | "mortgage"
+
+    interest_rate_pct: Mapped[float] = mapped_column(Numeric(6, 3))
+    original_principal: Mapped[float] = mapped_column(Numeric(12, 2))
+    current_balance: Mapped[float] = mapped_column(Numeric(12, 2))
+    minimum_payment_amount: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    next_payment_due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    is_overdue: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Student-loan-specific (null for mortgage rows)
+    is_federal: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    guarantor: Mapped[str | None] = mapped_column(String, nullable=True)
+    expected_payoff_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    # Mortgage-specific (null for student loan rows)
+    loan_term: Mapped[str | None] = mapped_column(String, nullable=True)
+    maturity_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    property_address: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    raw_payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
