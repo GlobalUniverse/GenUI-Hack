@@ -72,3 +72,50 @@ class FinancialSnapshot(BaseModel):
     cashflow: CashflowSnapshot
     goals: list[GoalSnapshot]
     alerts: list[AlertSnapshot]
+
+
+class ClientCategorySpend(BaseModel):
+    """Matches Flutter's CategorySpend.fromJson."""
+
+    name: str
+    amount: float
+    delta: float = 0
+
+
+class ClientTransaction(BaseModel):
+    """Matches Flutter's Transaction.fromJson. amount is signed: negative = outflow, positive = inflow."""
+
+    name: str
+    amount: float
+    category: str
+    date: date
+
+
+class ClientGoal(BaseModel):
+    """Matches Flutter's Goal.fromJson."""
+
+    name: str
+    target_amount: float
+    current_amount: float
+    target_date: date
+
+
+class ClientUpcomingBill(BaseModel):
+    """Matches Flutter's UpcomingBill.fromJson."""
+
+    name: str
+    amount: float
+    due_date: date
+
+
+class ClientSnapshot(BaseModel):
+    """Flat shape consumed directly by Flutter's FinancialSnapshot.fromJson at GET /snapshot."""
+
+    checking_balance: float
+    savings_balance: float
+    monthly_income: float
+    monthly_spending: float
+    top_categories: list[ClientCategorySpend]
+    recent_transactions: list[ClientTransaction]
+    goals: list[ClientGoal]
+    upcoming_bills: list[ClientUpcomingBill]

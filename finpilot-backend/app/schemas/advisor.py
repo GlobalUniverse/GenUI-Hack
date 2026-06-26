@@ -9,6 +9,7 @@ WidgetType = Literal[
     "transaction_table",
     "goal_progress",
     "recommendation_card",
+    "upcoming_bills",
 ]
 
 ALLOWED_WIDGET_TYPES = {
@@ -17,6 +18,7 @@ ALLOWED_WIDGET_TYPES = {
     "transaction_table",
     "goal_progress",
     "recommendation_card",
+    "upcoming_bills",
 }
 
 

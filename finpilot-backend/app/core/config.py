@@ -19,11 +19,19 @@ class Settings(BaseSettings):
     plaid_secret: str | None = Field(None, alias="PLAID_SECRET")
     plaid_env: str = Field("sandbox", alias="PLAID_ENV")
 
+    twilio_account_sid: str | None = Field(None, alias="TWILIO_ACCOUNT_SID")
+    twilio_auth_token: str | None = Field(None, alias="TWILIO_AUTH_TOKEN")
+    twilio_phone_number: str | None = Field(None, alias="TWILIO_PHONE_NUMBER")
+
     demo_profile_id: str = Field("demo", alias="DEMO_PROFILE_ID")
 
     @property
     def plaid_configured(self) -> bool:
         return bool(self.plaid_client_id and self.plaid_secret)
+
+    @property
+    def twilio_configured(self) -> bool:
+        return bool(self.twilio_account_sid and self.twilio_auth_token and self.twilio_phone_number)
 
     @property
     def gemini_configured(self) -> bool:

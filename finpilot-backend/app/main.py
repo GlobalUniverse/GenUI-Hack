@@ -18,6 +18,8 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(snapshot.router)
+app.include_router(snapshot.client_router)
 app.include_router(advisor.router)
+app.include_router(advisor.client_router)
 app.include_router(plaid.router)
 app.include_router(alerts.router)

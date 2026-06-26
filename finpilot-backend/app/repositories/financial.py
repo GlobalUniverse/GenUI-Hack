@@ -1,11 +1,15 @@
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.models import Account, Alert, Goal, PlaidItem, Profile, Transaction
+
+if TYPE_CHECKING:
+    from app.services.proactive_advisor import ProactiveFinding
 from app.schemas.financial import (
     AccountSnapshot,
     AlertSnapshot,
@@ -107,6 +111,33 @@ def replace_plaid_snapshot(db: Session, *, profile_id: str, plaid_payload: dict)
         )
 
     db.commit()
+
+
+def replace_proactive_alerts(db: Session, *, profile_id: str, findings: list["ProactiveFinding"]) -> list[Alert]:
+    """Replace this profile's pending alerts with a fresh proactive scan's findings."""
+    db.execute(
+        delete(Alert).where(Alert.profile_id == profile_id, Alert.status == "pending")
+    )
+    db.flush()
+
+    rows = [
+        Alert(
+            id=str(uuid4()),
+            profile_id=profile_id,
+            type=finding.type,
+            severity=finding.severity,
+            title=finding.title,
+            body=finding.body,
+            payload=finding.payload,
+            status="pending",
+        )
+        for finding in findings
+    ]
+    db.add_all(rows)
+    db.commit()
+    for row in rows:
+        db.refresh(row)
+    return rows
 
 
 def build_snapshot_from_db(db: Session, profile_id: str) -> FinancialSnapshot | None:

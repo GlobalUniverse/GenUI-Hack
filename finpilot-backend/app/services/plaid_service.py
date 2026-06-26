@@ -56,5 +56,25 @@ class PlaidService:
 
     def sync_transactions(self, access_token: str) -> dict:
         self.require_configured()
-        request = TransactionsSyncRequest(access_token=access_token)
-        return self.client.transactions_sync(request).to_dict()
+        cursor = None
+        combined: dict = {"accounts": [], "added": [], "modified": [], "removed": []}
+
+        while True:
+            kwargs = {"access_token": access_token}
+            if cursor is not None:
+                kwargs["cursor"] = cursor
+            request = TransactionsSyncRequest(**kwargs)
+            payload = self.client.transactions_sync(request).to_dict()
+
+            if payload.get("accounts"):
+                combined["accounts"] = payload["accounts"]
+            combined["added"].extend(payload.get("added", []))
+            combined["modified"].extend(payload.get("modified", []))
+            combined["removed"].extend(payload.get("removed", []))
+
+            cursor = payload.get("next_cursor")
+            combined["next_cursor"] = cursor
+            combined["request_id"] = payload.get("request_id")
+            if not payload.get("has_more"):
+                combined["has_more"] = False
+                return combined
