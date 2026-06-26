@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/financial_snapshot.dart';
 import '../services/chat_provider.dart';
+import '../widgets/skeleton.dart';
 
 class GoalsScreen extends StatelessWidget {
   const GoalsScreen({super.key});
@@ -16,7 +17,22 @@ class GoalsScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF0F1923),
       body: SafeArea(
         child: snap == null
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF4FC3F7)))
+            ? SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
+                    SkeletonBox(width: 120, height: 28, radius: 6),
+                    SizedBox(height: 8),
+                    SkeletonBox(width: 180, height: 14),
+                    SizedBox(height: 24),
+                    CardSkeleton(height: 160),
+                    SizedBox(height: 16),
+                    CardSkeleton(height: 160),
+                    SizedBox(height: 16),
+                    CardSkeleton(height: 120),
+                  ]),
+                ),
+              )
             : CustomScrollView(
                 slivers: [
                   SliverToBoxAdapter(
@@ -113,7 +129,7 @@ class _GoalCard extends StatelessWidget {
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.white05, borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: const Color(0x0DFFFFFF), borderRadius: BorderRadius.circular(8)),
             child: Text(
               'Save ${fmt.format(weeklyNeeded)}/week to hit this goal on time.',
               style: const TextStyle(color: Colors.white54, fontSize: 12),
