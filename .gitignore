@@ -31,3 +31,17 @@ npm-debug.log*
 .vscode/
 *.swp
 *.swo
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+.env
+.claude/
+ios/Flutter/ephemeral/
+ios/Pods/
+android/.gradle/
+android/local.properties
