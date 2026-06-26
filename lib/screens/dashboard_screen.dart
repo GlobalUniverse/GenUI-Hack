@@ -7,9 +7,14 @@ import '../widgets/dynamic/transaction_table_widget.dart';
 import '../widgets/dynamic/goal_progress_widget.dart';
 import '../widgets/dynamic/upcoming_bills_widget.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ChatProvider>();
@@ -21,38 +26,43 @@ class DashboardScreen extends StatelessWidget {
       body: SafeArea(
         child: snap == null
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF4FC3F7)))
-            : CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Good morning', style: TextStyle(color: Colors.white54, fontSize: 14)),
-                          const SizedBox(height: 4),
-                          const Text('Here\'s your money.', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 24),
-                          _balanceRow(fmt, snap.checkingBalance, snap.savingsBalance),
-                          const SizedBox(height: 12),
-                          _cashflowBanner(fmt, snap.monthlyIncome, snap.monthlySpending),
-                          const SizedBox(height: 20),
-                          if (snap.upcomingBills.any((b) => b.dueDate.difference(DateTime.now()).inDays <= 2))
-                            _alertBanner(snap.upcomingBills.firstWhere((b) => b.dueDate.difference(DateTime.now()).inDays <= 2), fmt),
-                          const SizedBox(height: 20),
-                          SpendingChartWidget(categories: snap.topCategories),
-                          const SizedBox(height: 16),
-                          GoalProgressWidget(data: const {}, goals: snap.goals),
-                          const SizedBox(height: 16),
-                          UpcomingBillsWidget(bills: snap.upcomingBills),
-                          const SizedBox(height: 16),
-                          TransactionTableWidget(transactions: snap.recentTransactions),
-                          const SizedBox(height: 100),
-                        ],
+            : RefreshIndicator(
+                color: const Color(0xFF4FC3F7),
+                backgroundColor: const Color(0xFF1E2A3A),
+                onRefresh: () => context.read<ChatProvider>().refreshSnapshot(),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Good morning', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                            const SizedBox(height: 4),
+                            const Text('Here\'s your money.', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 24),
+                            _balanceRow(fmt, snap.checkingBalance, snap.savingsBalance),
+                            const SizedBox(height: 12),
+                            _cashflowBanner(fmt, snap.monthlyIncome, snap.monthlySpending),
+                            const SizedBox(height: 20),
+                            if (snap.upcomingBills.any((b) => b.dueDate.difference(DateTime.now()).inDays <= 2))
+                              _alertBanner(snap.upcomingBills.firstWhere((b) => b.dueDate.difference(DateTime.now()).inDays <= 2), fmt),
+                            const SizedBox(height: 20),
+                            SpendingChartWidget(categories: snap.topCategories),
+                            const SizedBox(height: 16),
+                            GoalProgressWidget(data: const {}, goals: snap.goals),
+                            const SizedBox(height: 16),
+                            UpcomingBillsWidget(bills: snap.upcomingBills),
+                            const SizedBox(height: 16),
+                            TransactionTableWidget(transactions: snap.recentTransactions),
+                            const SizedBox(height: 100),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
       ),
     );
