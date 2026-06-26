@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/advisor_screen.dart';
 import 'screens/goals_screen.dart';
-import 'screens/user_picker_screen.dart';
+import 'screens/login_screen.dart';
 import 'services/chat_provider.dart';
 
 Future<void> main() async {
@@ -42,7 +42,7 @@ class FinPilotApp extends StatelessWidget {
             ),
           ),
         ),
-        home: const UserPickerScreen(),
+        home: const LoginScreen(),
       ),
     );
   }

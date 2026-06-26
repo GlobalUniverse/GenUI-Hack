@@ -7,6 +7,21 @@ import '../models/financial_snapshot.dart';
 class ApiService {
   static String get _base => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000';
 
+  // Returns profile_id string on success, null on failure
+  Future<Map<String, dynamic>?> login(String email, String password) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$_base/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      ).timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<FinancialSnapshot> getSnapshot({String profileId = 'alex'}) async {
     try {
       final res = await http.get(

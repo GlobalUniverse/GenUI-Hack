@@ -8,6 +8,13 @@ import '../widgets/dynamic/spending_chart_widget.dart';
 import '../widgets/dynamic/transaction_table_widget.dart';
 import '../widgets/dynamic/goal_progress_widget.dart';
 import '../widgets/dynamic/upcoming_bills_widget.dart';
+import '../widgets/dashboard/critical_banner_widget.dart';
+import '../widgets/dashboard/overdraft_forecast_widget.dart';
+import '../widgets/dashboard/net_worth_widget.dart';
+import '../widgets/dashboard/savings_rate_widget.dart';
+import '../widgets/dashboard/merchant_breakdown_widget.dart';
+import '../widgets/dashboard/weekly_spending_widget.dart';
+import 'login_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -35,9 +42,9 @@ class DashboardScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _header(snap),
+                            _header(context, snap),
                             const SizedBox(height: 24),
-                            ..._buildLayout(snap, fmt, context),
+                            ..._buildLayout(snap, fmt),
                             const SizedBox(height: 100),
                           ],
                         ),
@@ -50,33 +57,73 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // Renders dashboard sections in the order specified by snap.layout
-  List<Widget> _buildLayout(FinancialSnapshot snap, NumberFormat fmt, BuildContext context) {
+  List<Widget> _buildLayout(FinancialSnapshot snap, NumberFormat fmt) {
     final widgets = <Widget>[];
-    final urgentBill = snap.upcomingBills
-        .where((b) => b.dueDate.difference(DateTime.now()).inDays <= 2)
-        .toList();
+    final dailyBurn = snap.monthlySpending / 30;
 
     for (final key in snap.layout) {
       switch (key) {
+
+        case 'critical_banner':
+          if (snap.criticalMessage.isNotEmpty) {
+            widgets.add(CriticalBannerWidget(message: snap.criticalMessage));
+            widgets.add(const SizedBox(height: 10));
+          }
+
+        case 'overdraft_forecast':
+          if (snap.overdraftDays > 0) {
+            widgets.add(OverdraftForecastWidget(
+              days: snap.overdraftDays,
+              balance: snap.checkingBalance,
+              dailyBurn: dailyBurn,
+            ));
+            widgets.add(const SizedBox(height: 10));
+          }
+
         case 'balances':
           widgets.add(_balanceRow(fmt, snap.checkingBalance, snap.savingsBalance));
           widgets.add(const SizedBox(height: 10));
+
         case 'cashflow':
           widgets.add(_cashflowBanner(fmt, snap.monthlyIncome, snap.monthlySpending));
           widgets.add(const SizedBox(height: 10));
-        case 'bill_alert':
-          if (urgentBill.isNotEmpty) {
-            widgets.add(_alertBanner(urgentBill.first, fmt));
-            widgets.add(const SizedBox(height: 10));
+
+        case 'net_worth':
+          if (snap.netWorth > 0) {
+            widgets.add(const SizedBox(height: 14));
+            widgets.add(NetWorthWidget(netWorth: snap.netWorth, monthlyChange: snap.netWorthChange));
           }
+
+        case 'savings_rate':
+          if (snap.savingsRate > 0) {
+            widgets.add(const SizedBox(height: 10));
+            widgets.add(SavingsRateWidget(rate: snap.savingsRate));
+          }
+
+        case 'merchant_breakdown':
+          if (snap.topMerchants.isNotEmpty) {
+            widgets.add(const SizedBox(height: 24));
+            widgets.add(_sectionLabel('Top Merchants'));
+            widgets.add(const SizedBox(height: 10));
+            widgets.add(MerchantBreakdownWidget(merchants: snap.topMerchants));
+          }
+
+        case 'weekly_spending':
+          if (snap.weeklySpending.length >= 7) {
+            widgets.add(const SizedBox(height: 24));
+            widgets.add(_sectionLabel('This Week'));
+            widgets.add(const SizedBox(height: 10));
+            widgets.add(WeeklySpendingWidget(daily: snap.weeklySpending));
+          }
+
         case 'spending_chart':
           if (snap.topCategories.isNotEmpty) {
-            widgets.add(const SizedBox(height: 14));
+            widgets.add(const SizedBox(height: 24));
             widgets.add(_sectionLabel('Spending'));
             widgets.add(const SizedBox(height: 10));
             widgets.add(SpendingChartWidget(categories: snap.topCategories));
           }
+
         case 'goals':
           if (snap.goals.isNotEmpty) {
             widgets.add(const SizedBox(height: 24));
@@ -84,6 +131,7 @@ class DashboardScreen extends StatelessWidget {
             widgets.add(const SizedBox(height: 10));
             widgets.add(GoalProgressWidget(data: const {}, goals: snap.goals));
           }
+
         case 'upcoming_bills':
           if (snap.upcomingBills.isNotEmpty) {
             widgets.add(const SizedBox(height: 24));
@@ -91,6 +139,7 @@ class DashboardScreen extends StatelessWidget {
             widgets.add(const SizedBox(height: 10));
             widgets.add(UpcomingBillsWidget(bills: snap.upcomingBills));
           }
+
         case 'transactions':
           if (snap.recentTransactions.isNotEmpty) {
             widgets.add(const SizedBox(height: 24));
@@ -103,32 +152,41 @@ class DashboardScreen extends StatelessWidget {
     return widgets;
   }
 
-  Widget _header(FinancialSnapshot snap) {
+  Widget _header(BuildContext context, FinancialSnapshot snap) {
     final hour = DateTime.now().hour;
     final greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(greeting, style: const TextStyle(color: AppColors.inkMid, fontSize: 13, fontWeight: FontWeight.w400)),
+          Text(greeting, style: const TextStyle(color: AppColors.inkMid, fontSize: 13)),
           const SizedBox(height: 2),
           Text(
             snap.profileName.isNotEmpty ? snap.profileName : "Here's your money.",
             style: const TextStyle(color: AppColors.ink, fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.5),
           ),
+          if (snap.profileTagline.isNotEmpty)
+            Text(snap.profileTagline, style: const TextStyle(color: AppColors.inkMid, fontSize: 12)),
         ]),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(20)),
-          child: const Text('Live', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+        GestureDetector(
+          onTap: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (_) => false,
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(20)),
+            child: const Text('Sign out', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+          ),
         ),
       ],
     );
   }
 
-  Widget _sectionLabel(String label) {
-    return Text(label.toUpperCase(), style: const TextStyle(color: AppColors.inkLight, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8));
-  }
+  Widget _sectionLabel(String label) => Text(
+        label.toUpperCase(),
+        style: const TextStyle(color: AppColors.inkLight, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8),
+      );
 
   Widget _balanceRow(NumberFormat fmt, double checking, double savings) {
     return Row(children: [
@@ -182,25 +240,4 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _cfDivider() => Container(height: 28, width: 1, color: AppColors.border);
-
-  Widget _alertBanner(UpcomingBill bill, NumberFormat fmt) {
-    final days = bill.dueDate.difference(DateTime.now()).inDays;
-    final when = days <= 0 ? 'today' : 'tomorrow';
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.amber.withValues(alpha: 0.4)),
-      ),
-      child: Row(children: [
-        const Icon(Icons.warning_amber_rounded, color: AppColors.amber, size: 18),
-        const SizedBox(width: 10),
-        Expanded(child: Text(
-          '${bill.name} (${fmt.format(bill.amount)}) due $when.',
-          style: const TextStyle(color: Color(0xFF92400E), fontSize: 13, fontWeight: FontWeight.w500),
-        )),
-      ]),
-    );
-  }
 }
