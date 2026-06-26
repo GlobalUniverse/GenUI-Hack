@@ -9,20 +9,25 @@ class ChatProvider extends ChangeNotifier {
   final List<ChatMessage> messages = [];
   bool isLoading = false;
   FinancialSnapshot? snapshot;
+  String _profileId = 'alex';
 
-  ChatProvider() {
-    _loadSnapshot();
-  }
+  String get profileId => _profileId;
 
-  Future<void> _loadSnapshot() async {
-    snapshot = await _api.getSnapshot();
+  ChatProvider();
+
+  Future<void> loadProfile(String profileId) async {
+    _profileId = profileId;
+    messages.clear();
+    snapshot = null;
+    notifyListeners();
+    snapshot = await _api.getSnapshot(profileId: profileId);
     notifyListeners();
   }
 
   Future<void> refreshSnapshot() async {
     snapshot = null;
     notifyListeners();
-    snapshot = await _api.getSnapshot();
+    snapshot = await _api.getSnapshot(profileId: _profileId);
     notifyListeners();
   }
 
@@ -38,7 +43,7 @@ class ChatProvider extends ChangeNotifier {
         })
         .toList();
 
-    final response = await _api.askAdvisor(text, history);
+    final response = await _api.askAdvisor(text, history, profileId: _profileId);
 
     messages.add(ChatMessage(
       role: MessageRole.advisor,

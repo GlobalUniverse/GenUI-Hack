@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:provider/provider.dart';
+import '../main.dart';
 import '../models/chat_message.dart';
 import '../services/chat_provider.dart';
 import '../widgets/dynamic/widget_renderer.dart';
@@ -52,21 +53,40 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
     final provider = context.watch<ChatProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1923),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0F1923),
-        elevation: 0,
-        title: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('FinPilot', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          Text('AI Financial Advisor', style: TextStyle(color: Colors.white38, fontSize: 12)),
-        ]),
-        actions: [
-          if (provider.messages.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white38),
-              onPressed: () => context.read<ChatProvider>().clearChat(),
+      backgroundColor: AppColors.card,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: SafeArea(
+          child: Container(
+            height: 60,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: const BoxDecoration(
+              color: AppColors.card,
+              border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
-        ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Text('FinPilot', style: TextStyle(color: AppColors.ink, fontSize: 17, fontWeight: FontWeight.w700)),
+                  const Text('AI Financial Advisor', style: TextStyle(color: AppColors.inkLight, fontSize: 11)),
+                ]),
+                if (provider.messages.isNotEmpty)
+                  GestureDetector(
+                    onTap: () => context.read<ChatProvider>().clearChat(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text('Clear', style: TextStyle(color: AppColors.inkMid, fontSize: 12, fontWeight: FontWeight.w500)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -75,7 +95,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                 ? _emptyState(provider.isLoading)
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                     itemCount: provider.messages.length + (provider.isLoading ? 1 : 0),
                     itemBuilder: (context, i) {
                       if (i == provider.messages.length) return _typingIndicator();
@@ -94,34 +114,37 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          const SizedBox(height: 40),
+          const SizedBox(height: 48),
           Container(
-            width: 72,
-            height: 72,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF4FC3F7), Color(0xFF00BFA5)]),
-              borderRadius: BorderRadius.circular(22),
+              color: AppColors.ink,
+              borderRadius: BorderRadius.circular(18),
             ),
-            child: const Icon(Icons.auto_awesome, color: Colors.white, size: 36),
+            child: const Icon(Icons.auto_awesome, color: Colors.white, size: 30),
           ),
           const SizedBox(height: 20),
-          const Text('Ask me anything about your money', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+          const Text('Ask me anything\nabout your money', style: TextStyle(color: AppColors.ink, fontSize: 20, fontWeight: FontWeight.w700, height: 1.3, letterSpacing: -0.3), textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          const Text('I have access to your spending, savings, and upcoming bills.', style: TextStyle(color: Colors.white38, fontSize: 13), textAlign: TextAlign.center),
+          const Text('I have access to your spending,\nsavings, and upcoming bills.', style: TextStyle(color: AppColors.inkMid, fontSize: 13, height: 1.5), textAlign: TextAlign.center),
           const SizedBox(height: 32),
           ..._suggestions.map((s) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.only(bottom: 8),
             child: GestureDetector(
               onTap: loading ? null : () => _send(s),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E2A3A),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
                 ),
-                child: Text(s, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                child: Row(children: [
+                  Expanded(child: Text(s, style: const TextStyle(color: AppColors.ink, fontSize: 14, fontWeight: FontWeight.w400))),
+                  const Icon(Icons.arrow_forward, color: AppColors.inkLight, size: 15),
+                ]),
               ),
             ),
           )),
@@ -133,20 +156,20 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
   Widget _buildMessage(ChatMessage msg, snapshot) {
     final isUser = msg.role == MessageRole.user;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Column(
         crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           if (!isUser)
             const Padding(
-              padding: EdgeInsets.only(bottom: 4, left: 4),
-              child: Text('FinPilot', style: TextStyle(color: Colors.white38, fontSize: 11)),
+              padding: EdgeInsets.only(bottom: 4, left: 2),
+              child: Text('FinPilot', style: TextStyle(color: AppColors.inkLight, fontSize: 11, fontWeight: FontWeight.w500)),
             ),
           Container(
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: isUser ? const Color(0xFF4FC3F7) : const Color(0xFF1E2A3A),
+              color: isUser ? AppColors.ink : AppColors.divider,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
@@ -155,33 +178,33 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
               ),
             ),
             child: isUser
-                ? Text(msg.text, style: const TextStyle(color: Colors.black87, fontSize: 14, height: 1.4))
+                ? Text(msg.text, style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4))
                 : MarkdownBody(
                     data: msg.text,
                     styleSheet: MarkdownStyleSheet(
-                      p: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
-                      strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                      em: const TextStyle(color: Colors.white70, fontStyle: FontStyle.italic, fontSize: 14),
-                      code: const TextStyle(color: Color(0xFF4FC3F7), fontFamily: 'monospace', fontSize: 13),
+                      p: const TextStyle(color: AppColors.ink, fontSize: 14, height: 1.45),
+                      strong: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold, fontSize: 14),
+                      em: const TextStyle(color: AppColors.inkMid, fontStyle: FontStyle.italic, fontSize: 14),
+                      code: const TextStyle(color: AppColors.ink, fontFamily: 'monospace', fontSize: 13),
                       codeblockDecoration: BoxDecoration(
-                        color: Colors.black26,
+                        color: AppColors.bg,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      listBullet: const TextStyle(color: Colors.white70, fontSize: 14),
-                      h1: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      h2: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                      h3: const TextStyle(color: Color(0xFF4FC3F7), fontSize: 14, fontWeight: FontWeight.w600),
+                      listBullet: const TextStyle(color: AppColors.inkMid, fontSize: 14),
+                      h1: const TextStyle(color: AppColors.ink, fontSize: 18, fontWeight: FontWeight.bold),
+                      h2: const TextStyle(color: AppColors.ink, fontSize: 16, fontWeight: FontWeight.bold),
+                      h3: const TextStyle(color: AppColors.ink, fontSize: 14, fontWeight: FontWeight.w600),
                       blockquoteDecoration: const BoxDecoration(
-                        border: Border(left: BorderSide(color: Color(0xFF4FC3F7), width: 3)),
-                        color: Colors.black12,
+                        border: Border(left: BorderSide(color: AppColors.inkMid, width: 3)),
+                        color: AppColors.bg,
                       ),
-                      blockquote: const TextStyle(color: Colors.white70, fontSize: 14),
+                      blockquote: const TextStyle(color: AppColors.inkMid, fontSize: 14),
                     ),
                   ),
           ),
           if (!isUser && msg.widgets.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.only(top: 6),
               child: DynamicWidgetRenderer(specs: msg.widgets, snapshot: snapshot),
             ),
         ],
@@ -191,11 +214,11 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
 
   Widget _typingIndicator() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(color: const Color(0xFF1E2A3A), borderRadius: BorderRadius.circular(16)),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(16)),
           child: const Row(children: [
             _Dot(delay: 0),
             SizedBox(width: 4),
@@ -212,21 +235,23 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
       decoration: const BoxDecoration(
-        color: Color(0xFF0F1923),
-        border: Border(top: BorderSide(color: Colors.white10)),
+        color: AppColors.card,
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
       child: Row(children: [
         Expanded(
           child: TextField(
             controller: _controller,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppColors.ink, fontSize: 14),
             decoration: InputDecoration(
               hintText: 'Ask about your finances...',
-              hintStyle: const TextStyle(color: Colors.white38),
+              hintStyle: const TextStyle(color: AppColors.inkLight, fontSize: 14),
               filled: true,
-              fillColor: const Color(0xFF1E2A3A),
+              fillColor: AppColors.bg,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: AppColors.border)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: AppColors.border)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: AppColors.inkMid)),
             ),
             onSubmitted: loading ? null : _send,
           ),
@@ -238,13 +263,10 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              gradient: loading
-                  ? null
-                  : const LinearGradient(colors: [Color(0xFF4FC3F7), Color(0xFF00BFA5)]),
-              color: loading ? Colors.white12 : null,
+              color: loading ? AppColors.border : AppColors.ink,
               borderRadius: BorderRadius.circular(22),
             ),
-            child: Icon(loading ? Icons.hourglass_empty : Icons.send_rounded, color: Colors.white, size: 20),
+            child: Icon(loading ? Icons.hourglass_empty : Icons.arrow_upward_rounded, color: Colors.white, size: 20),
           ),
         ),
       ]),
@@ -268,7 +290,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))..repeat(reverse: true);
-    _anim = Tween(begin: 0.4, end: 1.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _anim = Tween(begin: 0.3, end: 1.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
     Future.delayed(Duration(milliseconds: widget.delay), () {
       if (mounted) _ctrl.forward();
     });
@@ -283,6 +305,6 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) => FadeTransition(
     opacity: _anim,
-    child: Container(width: 7, height: 7, decoration: const BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
+    child: Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppColors.inkMid, shape: BoxShape.circle)),
   );
 }
